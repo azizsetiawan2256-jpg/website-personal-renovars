@@ -1,0 +1,1922 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RenovARS — Manajemen Proyek Renovasi & Kontraktor</title>
+    <script>
+        // Terapkan tema lebih awal agar tidak berkedip
+        (function () {
+            try {
+                var t = localStorage.getItem('renovars_theme');
+                if (!t) t = (window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+                if (t === 'dark') document.documentElement.classList.add('dark');
+            } catch (e) {}
+        })();
+    </script>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Plus Jakarta Sans', 'sans-serif'],
+                    },
+                    colors: {
+                        amber: { 500: '#f59e0b', 600: '#d97706' }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .font-display { font-family: 'Plus Jakarta Sans', sans-serif; }
+
+        /* ---------- Komponen kustom ---------- */
+        .auth-bg { background: #f1f5f9; }
+        .tab-btn { display:flex; align-items:center; justify-content:center; gap:.5rem; padding:.75rem 1rem; border-radius:.75rem; font-size:.8rem; font-weight:600; white-space:nowrap; transition:all .2s; flex-shrink:0; }
+        @media (min-width:640px){ .tab-btn { flex:1; font-size:.85rem; } }
+        .tab-idle { color:#475569; }
+        .tab-idle:hover { background:#f1f5f9; }
+        .tab-idle i { color:#94a3b8; }
+        .tab-idle .tab-badge { background:#e2e8f0; color:#334155; }
+        .tab-active { background:#0f172a; color:#fff; font-weight:700; box-shadow:0 1px 2px rgba(0,0,0,.15); }
+        .tab-active i { color:#fbbf24; }
+        .tab-active .tab-badge { background:rgba(255,255,255,.2); color:#fff; }
+        .tab-badge { margin-left:.25rem; padding:.05rem .5rem; font-size:11px; border-radius:9999px; }
+
+        .seg { flex:1; padding:.6rem; border-radius:.75rem; font-weight:700; font-size:.8rem; transition:all .2s; }
+        .seg-active { background:#0f172a; color:#fff; }
+        .seg-idle { color:#64748b; }
+
+        .role-opt input { position:absolute; opacity:0; pointer-events:none; }
+        .role-opt > div { border:2px solid #cbd5e1; border-radius:.9rem; padding:.75rem; cursor:pointer; transition:all .15s; text-align:center; }
+        .role-opt input:checked + div { border-color:#f59e0b; background:rgba(245,158,11,.12); }
+        .paper { background:#ffffff !important; }
+
+        /* ---------- MODE MALAM ---------- */
+        html.dark body { background:#0b1120; color:#e2e8f0; }
+        html.dark .auth-bg { background:#0b1120; }
+        html.dark .bg-white { background-color:#111a2e; }
+        html.dark .bg-slate-50, html.dark [class*="bg-slate-50/"] { background-color:#162036; }
+        html.dark .bg-slate-100 { background-color:#1b2742; }
+        html.dark .bg-slate-200 { background-color:#2a3753; }
+        html.dark .bg-amber-50, html.dark [class*="bg-amber-50/"] { background-color:rgba(245,158,11,.12); }
+        html.dark .bg-amber-100, html.dark [class*="bg-amber-100/"] { background-color:rgba(245,158,11,.2); }
+        html.dark .bg-blue-50, html.dark [class*="bg-blue-50/"] { background-color:rgba(59,130,246,.12); }
+        html.dark .bg-blue-100, html.dark [class*="bg-blue-100/"] { background-color:rgba(59,130,246,.22); }
+        html.dark .bg-emerald-50, html.dark [class*="bg-emerald-50/"] { background-color:rgba(16,185,129,.12); }
+        html.dark .bg-emerald-100, html.dark [class*="bg-emerald-100/"] { background-color:rgba(16,185,129,.22); }
+        html.dark .bg-rose-50, html.dark [class*="bg-rose-50/"] { background-color:rgba(244,63,94,.12); }
+        html.dark .bg-rose-100, html.dark [class*="bg-rose-100/"] { background-color:rgba(244,63,94,.22); }
+
+        html.dark .hover\:bg-slate-50:hover, html.dark [class~="hover:bg-slate-50/80"]:hover { background-color:#162036; }
+        html.dark .hover\:bg-slate-100:hover { background-color:#1b2742; }
+        html.dark [class~="hover:bg-amber-50/40"]:hover { background-color:rgba(245,158,11,.1); }
+        html.dark .hover\:bg-blue-100:hover { background-color:rgba(59,130,246,.28); }
+        html.dark .hover\:bg-rose-50:hover { background-color:rgba(244,63,94,.15); }
+
+        html.dark .text-slate-900 { color:#f1f5f9; }
+        html.dark .text-slate-800 { color:#e2e8f0; }
+        html.dark .text-slate-700 { color:#cbd5e1; }
+        html.dark .text-slate-600 { color:#a3b2c8; }
+        html.dark .text-slate-500 { color:#8a9bb5; }
+        html.dark .text-amber-900, html.dark .text-amber-800, html.dark .text-amber-700 { color:#fcd34d; }
+        html.dark .text-amber-600 { color:#fbbf24; }
+        html.dark [class~="text-amber-700/80"] { color:rgba(252,211,77,.85); }
+        html.dark .text-blue-950, html.dark .text-blue-900, html.dark .text-blue-800, html.dark .text-blue-700 { color:#93c5fd; }
+        html.dark .text-blue-600 { color:#60a5fa; }
+        html.dark .text-emerald-900, html.dark .text-emerald-800, html.dark .text-emerald-700 { color:#6ee7b7; }
+        html.dark .text-emerald-600 { color:#34d399; }
+        html.dark .text-rose-900, html.dark .text-rose-800, html.dark .text-rose-700 { color:#fda4af; }
+        html.dark .text-rose-600 { color:#fb7185; }
+
+        html.dark [class~="border-slate-100"], html.dark [class~="divide-slate-100"] { border-color:#1f2a44; }
+        html.dark [class~="divide-slate-100"] > :not([hidden]) ~ :not([hidden]) { border-color:#1f2a44; }
+        html.dark [class~="border-slate-200"], html.dark [class~="border-slate-200/80"], html.dark [class~="border-slate-200/70"] { border-color:#263450; }
+        html.dark [class~="border-slate-300"] { border-color:#33415c; }
+        html.dark [class~="border-amber-200"], html.dark [class~="border-amber-200/80"], html.dark [class~="border-amber-200/70"], html.dark [class~="border-amber-300"] { border-color:rgba(245,158,11,.35); }
+        html.dark [class~="border-blue-200"], html.dark [class~="border-blue-200/70"] { border-color:rgba(59,130,246,.35); }
+        html.dark [class~="border-emerald-200"], html.dark [class~="border-emerald-200/80"], html.dark [class~="border-emerald-200/70"], html.dark [class~="border-emerald-300"] { border-color:rgba(16,185,129,.35); }
+        html.dark [class~="border-rose-300"] { border-color:rgba(244,63,94,.4); }
+
+        html.dark input:not([type=range]), html.dark select, html.dark textarea { background-color:#0f172a; color:#e2e8f0; border-color:#33415c; }
+        html.dark input::placeholder, html.dark textarea::placeholder { color:#64748b; }
+        html.dark select option { background:#0f172a; color:#e2e8f0; }
+        html.dark .tab-idle { color:#94a3b8; }
+        html.dark .tab-idle:hover { background:#1a2540; }
+        html.dark .tab-idle .tab-badge { background:#27344f; color:#cbd5e1; }
+        html.dark .tab-active { background:#f59e0b; color:#0f172a; }
+        html.dark .tab-active i { color:#0f172a; }
+        html.dark .tab-active .tab-badge { background:rgba(15,23,42,.25); color:#0f172a; }
+        html.dark .seg-active { background:#f59e0b; color:#0f172a; }
+        html.dark .seg-idle { color:#94a3b8; }
+        html.dark .role-opt > div { border-color:#33415c; }
+        html.dark .role-opt > div * { color:inherit; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased selection:bg-amber-500 selection:text-white">
+
+    <!-- Toast -->
+    <div id="toastContainer" class="fixed bottom-5 right-5 z-[80] flex flex-col gap-2 max-w-sm w-full pointer-events-none px-4 sm:px-0"></div>
+
+    <!-- ========================================================= -->
+    <!-- LAYAR LOGIN / REGISTRASI                                   -->
+    <!-- ========================================================= -->
+    <div id="authScreen" class="auth-bg fixed inset-0 z-[60] overflow-y-auto">
+        <div class="min-h-full grid lg:grid-cols-5">
+            <!-- Panel merek (desktop) -->
+            <div class="hidden lg:flex lg:col-span-2 flex-col justify-between bg-slate-900 text-white p-10 xl:p-14 relative overflow-hidden">
+                <div class="absolute -top-24 -right-24 w-72 h-72 rounded-full bg-amber-500/20 blur-3xl"></div>
+                <div class="absolute -bottom-24 -left-16 w-72 h-72 rounded-full bg-sky-500/10 blur-3xl"></div>
+                <div class="relative flex items-center gap-3">
+                    <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-slate-950 text-xl shadow-lg shadow-amber-500/20"><i class="fa-solid fa-helmet-safety"></i></div>
+                    <span class="font-display font-extrabold text-2xl tracking-tight">Renov<span class="text-amber-400">ARS</span></span>
+                </div>
+                <div class="relative space-y-7">
+                    <h2 class="font-display text-3xl xl:text-4xl font-extrabold leading-tight">Renovasi transparan,<br>tanpa tebak-tebakan.</h2>
+                    <div class="space-y-4 text-sm text-slate-300">
+                        <div class="flex gap-3"><i class="fa-solid fa-camera-retro text-amber-400 mt-1"></i><p><strong class="text-white">Progres harian berfoto.</strong> Laporan tukang lengkap dengan timestamp.</p></div>
+                        <div class="flex gap-3"><i class="fa-solid fa-receipt text-amber-400 mt-1"></i><p><strong class="text-white">Nota & pengeluaran tercatat.</strong> Semua belanja material bisa diperiksa.</p></div>
+                        <div class="flex gap-3"><i class="fa-solid fa-file-signature text-amber-400 mt-1"></i><p><strong class="text-white">Addendum bertanda tangan.</strong> Biaya tambahan wajib disetujui pemilik rumah.</p></div>
+                        <div class="flex gap-3"><i class="fa-solid fa-chart-line text-amber-400 mt-1"></i><p><strong class="text-white">Analitik & laporan PDF.</strong> Pantau anggaran dan jadwal kapan saja.</p></div>
+                    </div>
+                </div>
+                <p class="relative text-xs text-slate-500">&copy; RenovARS — Transparansi Konstruksi & Renovasi Rumah</p>
+            </div>
+
+            <!-- Form -->
+            <div class="lg:col-span-3 flex items-center justify-center p-5 sm:p-10 relative">
+                <button onclick="toggleTheme()" class="theme-toggle absolute top-4 right-4 inline-flex items-center gap-2 text-xs font-semibold px-3 py-2 rounded-xl border border-slate-300 bg-white text-slate-700 hover:bg-slate-100 transition" title="Ganti mode tampilan">
+                    <i class="theme-icon fa-solid fa-moon"></i><span class="theme-label">Mode Malam</span>
+                </button>
+
+                <div class="w-full max-w-md">
+                    <div class="lg:hidden flex items-center justify-center gap-3 mb-6">
+                        <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-slate-950 text-xl"><i class="fa-solid fa-helmet-safety"></i></div>
+                        <span class="font-display font-extrabold text-2xl tracking-tight text-slate-900">Renov<span class="text-amber-500">ARS</span></span>
+                    </div>
+
+                    <div class="bg-white rounded-2xl shadow-lg border border-slate-200/80 p-6 sm:p-8">
+                        <div class="flex bg-slate-100 rounded-2xl p-1 mb-6">
+                            <button id="authTabLogin" onclick="showAuthTab('login')" class="seg seg-active">Masuk</button>
+                            <button id="authTabRegister" onclick="showAuthTab('register')" class="seg seg-idle">Daftar ID Baru</button>
+                        </div>
+
+                        <div id="authNotice" class="hidden mb-4 text-xs rounded-xl px-3.5 py-2.5 border"></div>
+
+                        <!-- LOGIN -->
+                        <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-4" autocomplete="on">
+                            <div>
+                                <h1 class="font-display font-extrabold text-xl text-slate-900">Selamat datang kembali</h1>
+                                <p class="text-xs text-slate-500 mt-1">Masuk dengan ID pengguna dan kata sandi Anda.</p>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">ID Pengguna</label>
+                                <div class="relative">
+                                    <i class="fa-solid fa-user absolute left-3.5 top-3.5 text-slate-400 text-sm"></i>
+                                    <input type="text" id="loginId" required autocomplete="username" autocapitalize="none" placeholder="contoh: budi.santoso" class="w-full rounded-xl border border-slate-300 pl-10 pr-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Kata Sandi</label>
+                                <div class="relative">
+                                    <i class="fa-solid fa-lock absolute left-3.5 top-3.5 text-slate-400 text-sm"></i>
+                                    <input type="password" id="loginPass" required autocomplete="current-password" placeholder="Kata sandi" class="w-full rounded-xl border border-slate-300 pl-10 pr-11 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500">
+                                    <button type="button" onclick="togglePass('loginPass', this)" class="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 w-7 h-7" tabindex="-1"><i class="fa-regular fa-eye"></i></button>
+                                </div>
+                            </div>
+                            <div id="loginError" class="hidden text-xs rounded-xl px-3.5 py-2.5 bg-rose-50 text-rose-800 border border-rose-300"></div>
+                            <button type="submit" class="w-full inline-flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-sm px-5 py-3 rounded-xl shadow-sm transition">
+                                <i class="fa-solid fa-right-to-bracket"></i><span>Masuk</span>
+                            </button>
+                            <p class="text-xs text-center text-slate-500">Belum punya ID? <button type="button" onclick="showAuthTab('register')" class="font-bold text-amber-600 hover:underline">Daftar sekarang</button></p>
+                        </form>
+
+                        <!-- REGISTRASI -->
+                        <form id="registerForm" onsubmit="handleRegister(event)" class="space-y-4 hidden" autocomplete="off">
+                            <div>
+                                <h1 class="font-display font-extrabold text-xl text-slate-900">Buat ID RenovARS</h1>
+                                <p class="text-xs text-slate-500 mt-1">Daftar sekali, lalu masuk memakai ID Anda.</p>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Nama Lengkap *</label>
+                                <input type="text" id="regName" required maxlength="40" placeholder="Contoh: Budi Santoso" class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">ID Pengguna *</label>
+                                <input type="text" id="regId" required maxlength="20" autocapitalize="none" placeholder="contoh: budi.santoso" class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500">
+                                <span class="text-[11px] text-slate-400">4–20 karakter: huruf kecil, angka, titik (.) atau garis bawah (_).</span>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1.5">Daftar sebagai *</label>
+                                <div class="grid grid-cols-2 gap-3">
+                                    <label class="role-opt relative block">
+                                        <input type="radio" name="regRole" value="contractor" checked>
+                                        <div><i class="fa-solid fa-hard-hat text-amber-500 text-lg"></i><p class="text-xs font-bold text-slate-800 mt-1">Kontraktor / Tukang</p></div>
+                                    </label>
+                                    <label class="role-opt relative block">
+                                        <input type="radio" name="regRole" value="client">
+                                        <div><i class="fa-solid fa-house-user text-emerald-500 text-lg"></i><p class="text-xs font-bold text-slate-800 mt-1">Pemilik Rumah</p></div>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1">Kata Sandi *</label>
+                                    <div class="relative">
+                                        <input type="password" id="regPass" required minlength="6" autocomplete="new-password" placeholder="Min. 6 karakter" class="w-full rounded-xl border border-slate-300 pl-3.5 pr-10 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500">
+                                        <button type="button" onclick="togglePass('regPass', this)" class="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600 w-7 h-7" tabindex="-1"><i class="fa-regular fa-eye"></i></button>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1">Ulangi Kata Sandi *</label>
+                                    <input type="password" id="regPass2" required minlength="6" autocomplete="new-password" placeholder="Ketik ulang" class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500">
+                                </div>
+                            </div>
+                            <div id="registerError" class="hidden text-xs rounded-xl px-3.5 py-2.5 bg-rose-50 text-rose-800 border border-rose-300"></div>
+                            <button type="submit" class="w-full inline-flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-sm px-5 py-3 rounded-xl shadow-sm transition">
+                                <i class="fa-solid fa-user-plus"></i><span>Daftarkan ID</span>
+                            </button>
+                            <p class="text-xs text-center text-slate-500">Sudah punya ID? <button type="button" onclick="showAuthTab('login')" class="font-bold text-amber-600 hover:underline">Masuk</button></p>
+                        </form>
+                    </div>
+                    <p class="text-[11px] text-center text-slate-400 mt-4"><i class="fa-solid fa-circle-info mr-1"></i>Mode demo: akun dan data proyek disimpan di peramban perangkat ini.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================================= -->
+    <!-- APLIKASI UTAMA                                             -->
+    <!-- ========================================================= -->
+    <div id="appRoot" class="hidden">
+
+        <!-- Header -->
+        <header class="bg-slate-900 text-white sticky top-0 z-40 shadow-md border-b border-slate-800">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex flex-col md:flex-row md:items-center md:justify-between py-3 gap-3">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-slate-950 font-bold text-xl shadow-lg shadow-amber-500/20">
+                                <i class="fa-solid fa-helmet-safety"></i>
+                            </div>
+                            <div>
+                                <div class="flex items-center gap-2">
+                                    <span class="font-display font-extrabold text-xl tracking-tight text-white">Renov<span class="text-amber-400">ARS</span></span>
+                                    <span class="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-slate-800 text-amber-400 border border-slate-700">Proyek Aktif</span>
+                                </div>
+                                <p class="text-xs text-slate-400">Transparansi Konstruksi & Renovasi Rumah</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-wrap items-center justify-between md:justify-end gap-2.5">
+                        <button onclick="toggleTheme()" class="theme-toggle inline-flex items-center gap-2 text-xs font-semibold text-slate-200 hover:text-white bg-slate-800 hover:bg-slate-700 px-3 py-2 rounded-xl border border-slate-700 transition" title="Ganti mode tampilan">
+                            <i class="theme-icon fa-solid fa-moon text-amber-400"></i><span class="theme-label">Mode Malam</span>
+                        </button>
+                        <button id="resetDemoBtn" onclick="resetDemoData()" class="inline-flex items-center gap-1.5 text-xs font-medium text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 px-3 py-2 rounded-xl border border-slate-700 transition" title="Reset data proyek ke contoh awal">
+                            <i class="fa-solid fa-rotate-right text-amber-400"></i><span class="hidden sm:inline">Reset Demo</span>
+                        </button>
+                        <div class="flex items-center gap-2.5 bg-slate-800/90 pl-2 pr-1.5 py-1.5 rounded-xl border border-slate-700/80">
+                            <div id="userAvatar" class="w-8 h-8 rounded-lg bg-amber-500 text-slate-950 font-bold text-xs flex items-center justify-center">AB</div>
+                            <div class="leading-tight max-w-[9rem]">
+                                <p id="userName" class="text-xs font-semibold text-white truncate">Nama</p>
+                                <p id="userRoleLabel" class="text-[10px] text-slate-400">Peran</p>
+                            </div>
+                            <button onclick="handleLogout()" class="w-8 h-8 rounded-lg text-slate-300 hover:text-white hover:bg-slate-700 transition flex items-center justify-center" title="Keluar">
+                                <i class="fa-solid fa-right-from-bracket"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Role banner -->
+        <div id="roleBanner" class="bg-amber-50 border-b border-amber-200/80 transition-colors duration-300">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+                <div class="flex items-center gap-2 text-amber-900">
+                    <i id="roleBannerIcon" class="fa-solid fa-hard-hat text-amber-600 text-sm"></i>
+                    <span id="roleBannerText"></span>
+                </div>
+                <span class="text-[11px] font-semibold text-amber-700 bg-amber-100/80 px-2.5 py-0.5 rounded-md self-start sm:self-auto">ID Proyek: #RNV-2026-089</span>
+            </div>
+        </div>
+
+        <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+
+            <!-- Navigasi Tab -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-1.5 flex gap-1.5 overflow-x-auto">
+                <button onclick="switchTab('home')" id="tabBtn-home" class="tab-btn tab-active">
+                    <i class="fa-solid fa-house"></i><span>Beranda</span>
+                </button>
+                <button onclick="switchTab('progress')" id="tabBtn-progress" class="tab-btn tab-idle">
+                    <i class="fa-solid fa-camera-retro"></i><span>Progres Harian</span><span id="badge-progress" class="tab-badge">0</span>
+                </button>
+                <button onclick="switchTab('materials')" id="tabBtn-materials" class="tab-btn tab-idle">
+                    <i class="fa-solid fa-boxes-stacked"></i><span>Pengeluaran & Nota</span><span id="badge-materials" class="tab-badge">0</span>
+                </button>
+                <button onclick="switchTab('changeorders')" id="tabBtn-changeorders" class="tab-btn tab-idle">
+                    <i class="fa-solid fa-file-circle-plus"></i><span>Addendum</span><span id="badge-changeorders" class="tab-badge">0</span>
+                </button>
+                <button onclick="switchTab('analytics')" id="tabBtn-analytics" class="tab-btn tab-idle">
+                    <i class="fa-solid fa-chart-pie"></i><span>Analitik & Statistik</span>
+                </button>
+            </div>
+
+            <!-- ===================== TAB: BERANDA ===================== -->
+            <section id="tabContent-home" class="space-y-6">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                    <div>
+                        <p id="homeDate" class="text-xs text-slate-500"></p>
+                        <h2 id="homeGreeting" class="font-display text-xl sm:text-2xl font-extrabold text-slate-900"></h2>
+                    </div>
+                    <button onclick="downloadReportPDF()" class="inline-flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-sm px-5 py-2.5 rounded-xl shadow-sm transition">
+                        <i class="fa-solid fa-file-pdf"></i><span>Unduh Laporan PDF</span>
+                    </button>
+                </div>
+
+                <div id="homeAlerts" class="space-y-2.5"></div>
+
+                <!-- Ringkasan proyek -->
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5 sm:p-6">
+                    <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-5 border-b border-slate-100">
+                        <div>
+                            <div class="flex flex-wrap items-center gap-2 mb-1.5">
+                                <span class="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>Dalam Pengerjaan
+                                </span>
+                                <span class="text-xs text-slate-500 flex items-center gap-1"><i class="fa-solid fa-location-dot text-amber-500"></i>Jl. Pandanaran No. 42, Semarang</span>
+                            </div>
+                            <h1 class="font-display text-xl sm:text-2xl font-extrabold text-slate-900">Renovasi Dapur, Area Servis & Ruang Tamu — Bpk. Hendra</h1>
+                            <p class="text-xs sm:text-sm text-slate-500 mt-1">Pelaksana: <strong class="text-slate-700">CV. Karya Bangun Mandiri</strong> (Mandor: Pak Budi Santoso) • Mulai: 15 Okt 2026</p>
+                        </div>
+                        <div class="bg-slate-50 rounded-xl p-4 border border-slate-200/70 lg:w-80 shrink-0">
+                            <div class="flex items-center justify-between text-xs font-semibold mb-1.5">
+                                <span class="text-slate-600">Progres Fisik Proyek</span>
+                                <span id="headerProgressPercent" class="text-amber-600 font-bold text-sm">0%</span>
+                            </div>
+                            <div class="w-full bg-slate-200 rounded-full h-2.5 overflow-hidden">
+                                <div id="headerProgressBar" class="bg-gradient-to-r from-amber-500 to-amber-600 h-2.5 rounded-full transition-all duration-500" style="width:0%"></div>
+                            </div>
+                            <div class="flex items-center justify-between text-[11px] text-slate-500 mt-2">
+                                <span><i class="fa-regular fa-calendar mr-1"></i>Hari ke-<span id="currentDayDisplay">0</span> dari <span id="totalDaysDisplay">30</span> hari</span>
+                                <span id="extraDaysBadge" class="text-amber-700 font-medium hidden">+0 hari addendum</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-5">
+                        <div class="p-4 rounded-xl bg-slate-50 border border-slate-200/70">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-xs font-medium text-slate-500">Anggaran Awal (RAB)</span>
+                                <div class="w-8 h-8 rounded-lg bg-slate-200/70 text-slate-700 flex items-center justify-center text-sm"><i class="fa-solid fa-file-invoice-dollar"></i></div>
+                            </div>
+                            <div id="statInitialBudget" class="font-display font-bold text-lg sm:text-xl text-slate-900">Rp 0</div>
+                            <p class="text-[11px] text-slate-500 mt-1">Kontrak borongan + material</p>
+                        </div>
+                        <div class="p-4 rounded-xl bg-amber-50/60 border border-amber-200/70">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-xs font-medium text-amber-900">Addendum Disetujui</span>
+                                <div class="w-8 h-8 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center text-sm"><i class="fa-solid fa-file-signature"></i></div>
+                            </div>
+                            <div id="statApprovedExtras" class="font-display font-bold text-lg sm:text-xl text-amber-700">+ Rp 0</div>
+                            <p id="statPendingExtrasNote" class="text-[11px] text-amber-700/80 mt-1"></p>
+                        </div>
+                        <div class="p-4 rounded-xl bg-blue-50/50 border border-blue-200/70">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-xs font-medium text-blue-900">Total Pengeluaran</span>
+                                <div class="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center text-sm"><i class="fa-solid fa-receipt"></i></div>
+                            </div>
+                            <div id="statMaterialSpent" class="font-display font-bold text-lg sm:text-xl text-blue-950">Rp 0</div>
+                            <p id="statReceiptCount" class="text-[11px] text-blue-700 mt-1">0 nota terlampir</p>
+                        </div>
+                        <div class="p-4 rounded-xl bg-emerald-50/60 border border-emerald-200/70">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-xs font-medium text-emerald-900">Sisa Anggaran</span>
+                                <div class="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center text-sm"><i class="fa-solid fa-wallet"></i></div>
+                            </div>
+                            <div id="statRemainingBudget" class="font-display font-bold text-lg sm:text-xl text-emerald-800">Rp 0</div>
+                            <p id="statTotalContract" class="text-[11px] text-emerald-700 mt-1"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Grafik ringkas -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                    <div class="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5">
+                        <h3 class="font-display font-bold text-sm sm:text-base text-slate-900">Kurva Progres Fisik</h3>
+                        <p class="text-xs text-slate-500 mb-3">Realisasi dibandingkan rencana linear sepanjang durasi proyek.</p>
+                        <div class="relative h-64"><canvas id="chartHomeProgress"></canvas></div>
+                    </div>
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5">
+                        <h3 class="font-display font-bold text-sm sm:text-base text-slate-900">Pengeluaran per Kategori</h3>
+                        <p class="text-xs text-slate-500 mb-3">Komposisi total pengeluaran tercatat.</p>
+                        <div class="relative h-64"><canvas id="chartHomeCategory"></canvas></div>
+                    </div>
+                </div>
+
+                <!-- Aktivitas & aksi cepat -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                    <div class="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5">
+                        <h3 class="font-display font-bold text-sm sm:text-base text-slate-900 mb-2">Aktivitas Terbaru</h3>
+                        <div id="recentActivity" class="space-y-1"></div>
+                    </div>
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5">
+                        <h3 class="font-display font-bold text-sm sm:text-base text-slate-900 mb-3">Aksi Cepat</h3>
+                        <div id="quickActions" class="grid grid-cols-1 gap-2.5"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ===================== TAB: PROGRES HARIAN ===================== -->
+            <section id="tabContent-progress" class="hidden space-y-6">
+                <div id="contractorProgressFormCard" class="bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden">
+                    <div class="bg-slate-900 px-5 py-3.5 flex items-center justify-between">
+                        <div class="flex items-center gap-2 text-white">
+                            <i class="fa-solid fa-plus-circle text-amber-400"></i>
+                            <h2 class="font-display font-bold text-sm sm:text-base">Buat Laporan Progres Harian Baru</h2>
+                        </div>
+                        <span class="text-[11px] text-slate-400 hidden sm:inline">Otomatis mencatat tanggal & jam real-time</span>
+                    </div>
+                    <form id="dailyProgressForm" onsubmit="handleAddProgress(event)" class="p-5 space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div class="md:col-span-2">
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Judul / Area Pekerjaan *</label>
+                                <input type="text" id="progTitle" required placeholder="Contoh: Pemasangan keramik dinding dapur & plesteran" class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Jumlah Tukang Hadir *</label>
+                                <div class="relative">
+                                    <input type="number" id="progWorkers" min="1" max="30" value="4" required class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500">
+                                    <span class="absolute right-3.5 top-2.5 text-xs text-slate-400">Orang</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Kondisi Cuaca / Lapangan</label>
+                                <select id="progWeather" class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-amber-500">
+                                    <option value="Cerah — Kerja Optimal">☀️ Cerah — Kerja Optimal</option>
+                                    <option value="Berawan — Lancar">⛅ Berawan — Lancar</option>
+                                    <option value="Hujan Sore — Fokus Interior">🌧️ Hujan Sore — Fokus Interior</option>
+                                </select>
+                            </div>
+                            <div class="md:col-span-2">
+                                <div class="flex justify-between items-center mb-1">
+                                    <label class="block text-xs font-semibold text-slate-700">Update Total Progres Proyek (%)</label>
+                                    <span id="progSliderLabel" class="text-xs font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded">55%</span>
+                                </div>
+                                <input type="range" id="progPercent" min="1" max="100" value="55" oninput="document.getElementById('progSliderLabel').textContent = this.value + '%'" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-amber-500 mt-2">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Detail Pekerjaan Hari Ini *</label>
+                            <textarea id="progDescription" rows="2" required placeholder="Jelaskan detail pekerjaan yang selesai dikerjakan hari ini serta rencana besok..." class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"></textarea>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-center pt-1">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Foto Dokumentasi Lapangan (Opsional)</label>
+                                <label class="flex items-center justify-center gap-2 w-full px-4 py-3 border-2 border-dashed border-slate-300 rounded-xl cursor-pointer hover:border-amber-500 hover:bg-amber-50/40 transition text-xs font-medium text-slate-600">
+                                    <i class="fa-solid fa-cloud-arrow-up text-amber-500 text-base"></i>
+                                    <span id="progFileName">Pilih atau ambil foto dari perangkat...</span>
+                                    <input type="file" id="progPhotoInput" accept="image/*" class="hidden" onchange="previewUploadImage(this, 'progPhotoPreview', 'progFileName')">
+                                </label>
+                                <img id="progPhotoPreview" class="hidden mt-2 h-24 w-auto rounded-lg object-cover border border-slate-200" alt="Preview Foto">
+                            </div>
+                            <div class="flex justify-end">
+                                <button type="submit" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-sm px-6 py-3 rounded-xl shadow-sm transition cursor-pointer">
+                                    <i class="fa-solid fa-paper-plane"></i><span>Kirim Laporan & Timestamp</span>
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between">
+                        <h3 class="font-display font-bold text-base sm:text-lg text-slate-900">Linimasa Laporan Lapangan</h3>
+                        <span class="text-xs text-slate-500"><i class="fa-solid fa-shield-check text-emerald-600 mr-1"></i>Timestamp Terverifikasi Sistem</span>
+                    </div>
+                    <div id="progressTimelineList" class="space-y-4"></div>
+                </div>
+            </section>
+
+            <!-- ===================== TAB: PENGELUARAN & NOTA ===================== -->
+            <section id="tabContent-materials" class="hidden space-y-6">
+                <div id="contractorMaterialFormCard" class="bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden">
+                    <div class="bg-slate-900 px-5 py-3.5 flex items-center justify-between">
+                        <div class="flex items-center gap-2 text-white">
+                            <i class="fa-solid fa-receipt text-amber-400"></i>
+                            <h2 class="font-display font-bold text-sm sm:text-base">Catat Pengeluaran & Unggah Nota</h2>
+                        </div>
+                        <span class="text-[11px] text-slate-400 hidden sm:inline">Langsung terlihat oleh pemilik rumah</span>
+                    </div>
+                    <form id="materialForm" onsubmit="handleAddMaterial(event)" class="p-5 space-y-4">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                            <div class="lg:col-span-2">
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Nama Material / Pengeluaran *</label>
+                                <input type="text" id="matItem" required placeholder="Contoh: Semen Gresik 40kg (10 Sak) + Pasir" class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Toko / Supplier / Penerima *</label>
+                                <input type="text" id="matStore" required placeholder="Contoh: TB. Sumber Rejeki" class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Total Harga (Rp) *</label>
+                                <input type="number" id="matPrice" min="1000" step="500" required placeholder="Contoh: 750000" class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500">
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Kategori</label>
+                                <select id="matCategory" class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-amber-500">
+                                    <option value="Semen & Pasir">Semen, Pasir & Bata</option>
+                                    <option value="Keramik & Cat">Keramik, Granit & Cat</option>
+                                    <option value="Listrik & Pipa">Instalasi Listrik & Pipa Air</option>
+                                    <option value="Kayu & Besi">Kayu, Besi & Hardware</option>
+                                    <option value="Upah Tukang & Borongan">Upah Tukang & Borongan</option>
+                                    <option value="Lain-lain">Lain-lain</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Foto Struk / Nota</label>
+                                <label class="flex items-center justify-center gap-2 w-full px-3.5 py-2.5 border-2 border-dashed border-slate-300 rounded-xl cursor-pointer hover:border-amber-500 hover:bg-amber-50/40 transition text-xs font-medium text-slate-600">
+                                    <i class="fa-solid fa-camera text-amber-500"></i>
+                                    <span id="matFileName" class="truncate">Unggah foto nota...</span>
+                                    <input type="file" id="matReceiptInput" accept="image/*" class="hidden" onchange="previewUploadImage(this, 'matReceiptPreview', 'matFileName')">
+                                </label>
+                            </div>
+                            <div class="flex justify-end pt-2 md:pt-5">
+                                <button type="submit" class="w-full inline-flex items-center justify-center gap-2 bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm px-5 py-2.5 rounded-xl shadow-sm transition cursor-pointer">
+                                    <i class="fa-solid fa-plus text-amber-400"></i><span>Simpan Pengeluaran</span>
+                                </button>
+                            </div>
+                        </div>
+                        <img id="matReceiptPreview" class="hidden h-24 w-auto rounded-lg object-cover border border-slate-200" alt="Preview Nota">
+                    </form>
+                </div>
+
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden">
+                    <div class="p-5 border-b border-slate-100 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+                        <div>
+                            <h3 class="font-display font-bold text-base sm:text-lg text-slate-900">Buku Kas & Nota Pengeluaran</h3>
+                            <p class="text-xs text-slate-500">Klik "Lihat Nota" untuk memeriksa bukti struk dari toko bangunan.</p>
+                        </div>
+                        <div class="flex flex-col sm:flex-row sm:items-center gap-2.5">
+                            <div class="bg-blue-50 text-blue-900 px-3.5 py-2 rounded-xl text-xs font-bold border border-blue-200/70">
+                                Total Pengeluaran: <span id="tableTotalMaterial">Rp 0</span>
+                            </div>
+                            <button onclick="downloadReportPDF()" class="inline-flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs px-4 py-2.5 rounded-xl shadow-sm transition">
+                                <i class="fa-solid fa-file-pdf"></i><span>Unduh PDF Pengeluaran</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="hidden md:block overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-slate-50 border-b border-slate-200 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                                    <th class="py-3.5 px-5">Tanggal</th>
+                                    <th class="py-3.5 px-5">Item</th>
+                                    <th class="py-3.5 px-5">Toko / Supplier</th>
+                                    <th class="py-3.5 px-5">Kategori</th>
+                                    <th class="py-3.5 px-5 text-right">Nominal</th>
+                                    <th class="py-3.5 px-5 text-center">Bukti Nota</th>
+                                </tr>
+                            </thead>
+                            <tbody id="materialTableBody" class="divide-y divide-slate-100 text-sm"></tbody>
+                        </table>
+                    </div>
+                    <div id="materialMobileList" class="md:hidden divide-y divide-slate-100"></div>
+                </div>
+            </section>
+
+            <!-- ===================== TAB: ADDENDUM ===================== -->
+            <section id="tabContent-changeorders" class="hidden space-y-6">
+                <div id="contractorChangeOrderFormCard" class="bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden">
+                    <div class="bg-slate-900 px-5 py-3.5 flex items-center justify-between">
+                        <div class="flex items-center gap-2 text-white">
+                            <i class="fa-solid fa-file-pen text-amber-400"></i>
+                            <h2 class="font-display font-bold text-sm sm:text-base">Ajukan Perubahan Desain / Biaya Tambahan (Addendum)</h2>
+                        </div>
+                        <span class="text-[11px] text-amber-300 hidden sm:inline">Wajib ACC Klien sebelum dikerjakan</span>
+                    </div>
+                    <form id="changeOrderForm" onsubmit="handleAddChangeOrder(event)" class="p-5 space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div class="md:col-span-2">
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Judul Perubahan / Pekerjaan Tambah *</label>
+                                <input type="text" id="coTitle" required placeholder="Contoh: Penambahan 3 titik stopkontak & saklar Panasonic" class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Selisih Biaya (Rp) *</label>
+                                <input type="number" id="coCost" step="1000" required placeholder="Contoh: 850000 (atau -200000)" class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500">
+                                <span class="text-[10px] text-slate-400">Gunakan minus (-) jika pengurangan biaya</span>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Dampak Waktu Pengerjaan</label>
+                                <select id="coDays" class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-amber-500">
+                                    <option value="0">Tidak menambah hari (0 hari)</option>
+                                    <option value="1">+1 Hari kerja</option>
+                                    <option value="2">+2 Hari kerja</option>
+                                    <option value="3">+3 Hari kerja</option>
+                                    <option value="5">+5 Hari kerja</option>
+                                </select>
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Alasan Teknis / Permintaan Klien *</label>
+                                <input type="text" id="coReason" required placeholder="Contoh: Permintaan Ibu Hendra untuk peralatan dapur (microwave & dispenser)" class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500">
+                            </div>
+                        </div>
+                        <div class="flex justify-end">
+                            <button type="submit" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-sm px-6 py-2.5 rounded-xl shadow-sm transition cursor-pointer">
+                                <i class="fa-solid fa-paper-plane"></i><span>Kirim Pengajuan ke Klien</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <div id="clientCoHint" class="hidden bg-blue-50 border border-blue-200 rounded-2xl p-4 flex items-start gap-3">
+                    <i class="fa-solid fa-signature text-blue-600 text-lg mt-0.5"></i>
+                    <div class="text-xs sm:text-sm text-blue-950">
+                        <p class="font-bold">Persetujuan Digital Pemilik Rumah</p>
+                        <p class="text-blue-800 mt-0.5">Kontraktor tidak akan mengerjakan atau menagih pekerjaan tambahan di luar RAB tanpa tanda tangan persetujuan digital Anda di bawah ini.</p>
+                    </div>
+                </div>
+
+                <div id="changeOrdersList" class="grid grid-cols-1 gap-4"></div>
+            </section>
+
+            <!-- ===================== TAB: ANALITIK ===================== -->
+            <section id="tabContent-analytics" class="hidden space-y-6">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                        <h2 class="font-display text-xl sm:text-2xl font-extrabold text-slate-900">Analitik & Statistik Proyek</h2>
+                        <p class="text-xs sm:text-sm text-slate-500">Ringkasan anggaran, jadwal, tenaga kerja, dan pengeluaran dalam satu tempat.</p>
+                    </div>
+                    <button onclick="downloadReportPDF()" class="inline-flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-sm px-5 py-2.5 rounded-xl shadow-sm transition">
+                        <i class="fa-solid fa-file-pdf"></i><span>Unduh Laporan PDF</span>
+                    </button>
+                </div>
+
+                <div id="analyticsStats" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"></div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5">
+                        <h3 class="font-display font-bold text-sm sm:text-base text-slate-900">Kurva Progres Fisik</h3>
+                        <p class="text-xs text-slate-500 mb-3">Garis putus-putus adalah rencana linear.</p>
+                        <div class="relative h-64"><canvas id="chartAnProgress"></canvas></div>
+                    </div>
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5">
+                        <h3 class="font-display font-bold text-sm sm:text-base text-slate-900">Akumulasi Pengeluaran</h3>
+                        <p class="text-xs text-slate-500 mb-3">Total pengeluaran kumulatif menurut tanggal nota.</p>
+                        <div class="relative h-64"><canvas id="chartAnCumulative"></canvas></div>
+                    </div>
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5">
+                        <h3 class="font-display font-bold text-sm sm:text-base text-slate-900">Pengeluaran per Kategori</h3>
+                        <p class="text-xs text-slate-500 mb-3">Proporsi tiap kategori terhadap total.</p>
+                        <div class="relative h-64"><canvas id="chartAnCategory"></canvas></div>
+                    </div>
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5">
+                        <h3 class="font-display font-bold text-sm sm:text-base text-slate-900">Pengeluaran per Toko / Supplier</h3>
+                        <p class="text-xs text-slate-500 mb-3">Enam penerima pembayaran terbesar.</p>
+                        <div class="relative h-64"><canvas id="chartAnStores"></canvas></div>
+                    </div>
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5">
+                        <h3 class="font-display font-bold text-sm sm:text-base text-slate-900">Kehadiran Tukang per Laporan</h3>
+                        <p class="text-xs text-slate-500 mb-3">Jumlah tukang hadir pada setiap laporan harian.</p>
+                        <div class="relative h-64"><canvas id="chartAnWorkers"></canvas></div>
+                    </div>
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5">
+                        <h3 class="font-display font-bold text-sm sm:text-base text-slate-900">Rincian Kategori</h3>
+                        <p class="text-xs text-slate-500 mb-3">Nominal dan persentase dari total pengeluaran.</p>
+                        <div id="categoryBreakdown" class="space-y-3"></div>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+
+        <footer class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8 text-center text-[11px] text-slate-400">
+            RenovARS &copy; 2026 — Transparansi Konstruksi & Renovasi Rumah
+        </footer>
+    </div>
+
+    <!-- MODAL: NOTA -->
+    <div id="receiptModal" class="fixed inset-0 z-50 hidden bg-slate-950/70 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full shadow-2xl overflow-hidden border border-slate-200">
+            <div class="bg-slate-900 text-white px-5 py-3.5 flex items-center justify-between">
+                <div class="flex items-center gap-2"><i class="fa-solid fa-receipt text-amber-400"></i><h3 class="font-display font-bold text-sm">Bukti Nota / Struk Pembelian</h3></div>
+                <button onclick="closeModal('receiptModal')" class="text-slate-400 hover:text-white w-8 h-8 rounded-lg flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div id="receiptModalBody" class="p-5 max-h-[80vh] overflow-y-auto"></div>
+        </div>
+    </div>
+
+    <!-- MODAL: PERSETUJUAN -->
+    <div id="approvalModal" class="fixed inset-0 z-50 hidden bg-slate-950/70 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-lg w-full shadow-2xl overflow-hidden border border-slate-200">
+            <div class="bg-slate-900 text-white px-5 py-3.5 flex items-center justify-between">
+                <div class="flex items-center gap-2"><i class="fa-solid fa-file-signature text-amber-400"></i><h3 class="font-display font-bold text-sm">Persetujuan Digital Addendum</h3></div>
+                <button onclick="closeModal('approvalModal')" class="text-slate-400 hover:text-white w-8 h-8 rounded-lg flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="p-5 space-y-4 max-h-[85vh] overflow-y-auto">
+                <div id="approvalSummaryBox" class="bg-amber-50 border border-amber-200 rounded-xl p-3.5 text-xs space-y-1"></div>
+                <div>
+                    <div class="flex items-center justify-between mb-1.5">
+                        <label class="text-xs font-bold text-slate-700">Tanda Tangan Pemilik Rumah (<span id="approvalSigner"></span>) *</label>
+                        <button type="button" onclick="clearSignaturePad()" class="text-[11px] font-semibold text-rose-600 hover:underline"><i class="fa-solid fa-eraser mr-1"></i>Hapus Ulang</button>
+                    </div>
+                    <div class="paper border-2 border-dashed border-slate-300 rounded-xl relative overflow-hidden">
+                        <canvas id="signatureCanvas" class="w-full h-36 touch-none cursor-crosshair block"></canvas>
+                        <span id="sigPlaceholder" class="pointer-events-none absolute inset-0 flex items-center justify-center text-xs text-slate-400">Goreskan tanda tangan Anda di kotak ini</span>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Catatan Tambahan (Opsional)</label>
+                    <input type="text" id="approvalNoteInput" placeholder="Contoh: Setuju, pastikan merk kabel sesuai kesepakatan" class="w-full rounded-xl border border-slate-300 px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500">
+                </div>
+                <div class="flex flex-col sm:flex-row gap-2.5 pt-2">
+                    <button type="button" onclick="closeModal('approvalModal')" class="flex-1 py-2.5 px-4 rounded-xl border border-slate-300 text-slate-700 font-semibold text-xs sm:text-sm hover:bg-slate-50 transition">Batal</button>
+                    <button type="button" onclick="confirmChangeOrderApproval()" class="flex-1 py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm shadow-sm transition flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-check-double"></i><span>Sah-kan & Setujui Biaya</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: TOLAK -->
+    <div id="rejectModal" class="fixed inset-0 z-50 hidden bg-slate-950/70 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full shadow-2xl overflow-hidden border border-slate-200">
+            <div class="bg-rose-900 text-white px-5 py-3.5 flex items-center justify-between">
+                <div class="flex items-center gap-2"><i class="fa-solid fa-circle-xmark text-rose-300"></i><h3 class="font-display font-bold text-sm">Tolak Pengajuan Tambahan</h3></div>
+                <button onclick="closeModal('rejectModal')" class="text-rose-200 hover:text-white w-8 h-8 rounded-lg flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="p-5 space-y-4">
+                <p class="text-xs text-slate-600">Berikan alasan penolakan agar kontraktor tetap berpegang pada spesifikasi awal RAB:</p>
+                <textarea id="rejectReasonInput" rows="3" placeholder="Contoh: Biaya terlalu tinggi, tetap gunakan spesifikasi keramik awal saja." class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-rose-500"></textarea>
+                <div class="flex gap-2.5">
+                    <button type="button" onclick="closeModal('rejectModal')" class="flex-1 py-2.5 px-4 rounded-xl border border-slate-300 text-slate-700 font-semibold text-xs sm:text-sm hover:bg-slate-50">Batal</button>
+                    <button type="button" onclick="confirmChangeOrderReject()" class="flex-1 py-2.5 px-4 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs sm:text-sm">Konfirmasi Tolak</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pustaka grafik & PDF -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
+
+    <script>
+        // =====================================================
+        // 1. PENYIMPANAN, DATA AWAL, STATE
+        // =====================================================
+        const KEYS = {
+            data: 'renovars_project_data_v1',
+            oldData: 'pantaureno_project_data_v1',
+            users: 'renovars_users_v1',
+            session: 'renovars_session_v1',
+            theme: 'renovars_theme'
+        };
+        const memStore = {};
+        const store = {
+            get(k) { try { return localStorage.getItem(k); } catch (e) { return memStore[k] ?? null; } },
+            set(k, v) { try { localStorage.setItem(k, v); return true; } catch (e) { memStore[k] = v; return false; } },
+            del(k) { try { localStorage.removeItem(k); } catch (e) { delete memStore[k]; } }
+        };
+
+        const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+
+        const defaultProjectData = {
+            initialBudget: 85000000,
+            baseDays: 30,
+            overallProgress: 52,
+            progressUpdates: [
+                { id: 'prog-3', dayNumber: 16, timestamp: '12 Nov 2026 • 16:45 WIB', title: 'Pemasangan Rangka Plafon Gypsum & Jalur Pipa Air Bersih Dapur', workers: 5, weather: 'Cerah — Kerja Optimal', progressAfter: 52, description: 'Rangka hollow galvanis ruang tamu 100% terpasang rapi. Instalasi pipa air panas & dingin untuk area kitchen sink sudah dites tekan dan tidak ada kebocoran.', photoType: 'plafon', customPhoto: null },
+                { id: 'prog-2', dayNumber: 14, timestamp: '10 Nov 2026 • 17:10 WIB', title: 'Plesteran & Acian Dinding Dapur Utama', workers: 4, weather: 'Berawan — Lancar', progressAfter: 44, description: 'Plesteran dinding area backsplash dapur selesai diratakan dengan waterpass. Siap untuk pemasangan keramik dinding besok.', photoType: 'dinding', customPhoto: null },
+                { id: 'prog-1', dayNumber: 10, timestamp: '06 Nov 2026 • 16:30 WIB', title: 'Pembongkaran Keramik Lama & Cor Meja Dapur Beton', workers: 5, weather: 'Hujan Sore — Fokus Interior', progressAfter: 30, description: 'Puing bongkaran sudah diangkut keluar lokasi. Pengecoran meja dapur beton bertulang selesai dilakukan dengan ketebalan 8 cm.', photoType: 'meja', customPhoto: null }
+            ],
+            materials: [
+                { id: 'mat-4', date: '11 Nov 2026', item: 'Besi Hollow 4x4 Galvanis (25 Btg) + Papan Gypsum 9mm (14 Lbr)', store: 'TB. Mitra Bangunan Jaya', category: 'Kayu & Besi', price: 2450000, receiptNo: 'INV/MBJ/2611/0892', customReceipt: null },
+                { id: 'mat-3', date: '09 Nov 2026', item: 'Pipa Rucika AW 3/4" (8 Btg), Knee, Lem Pipa & Stop Kran Kuningan', store: 'Depo Teknik & Sanitasi', category: 'Listrik & Pipa', price: 980000, receiptNo: 'STR-99281-DTS', customReceipt: null },
+                { id: 'mat-2', date: '07 Nov 2026', item: 'Semen Gresik 40kg (18 Sak) + Pasir Muntilan 1 Truk Engkel', store: 'TB. Sumber Rejeki', category: 'Semen & Pasir', price: 2890000, receiptNo: 'SR-2026-4410', customReceipt: null },
+                { id: 'mat-1', date: '03 Nov 2026', item: 'Granit Lantai 60x60 Ivory Cream (28 Dus) + Semen Perekat MU-400', store: 'Sentra Keramik Semarang', category: 'Keramik & Cat', price: 6720000, receiptNo: 'SKS/11/00319', customReceipt: null }
+            ],
+            changeOrders: [
+                { id: 'co-2', createdAt: '12 Nov 2026 • 11:20 WIB', title: 'Upgrade Keramik Dinding Dapur ke Granit Motif Marmer Carrara 60x120', costImpact: 2350000, daysImpact: 1, reason: 'Permintaan Ibu Hendra agar dinding dapur tanpa banyak nat dan mudah dibersihkan dari cipratan minyak.', status: 'pending', clientNote: '', approvedAt: null, approvedBy: null, signatureData: null },
+                { id: 'co-1', createdAt: '08 Nov 2026 • 14:15 WIB', title: 'Penambahan 2 Titik Stopkontak AC & Jalur Kabel NYM 3x2.5mm Eterna', costImpact: 950000, daysImpact: 0, reason: 'Persiapan unit AC ruang tamu agar kabel tertanam rapi di dalam dinding sebelum diaci.', status: 'approved', clientNote: 'Setuju Pak Budi, pastikan pakai MCB terpisah ya.', approvedAt: '08 Nov 2026 • 16:05 WIB', approvedBy: null, signatureData: 'demo-signature' }
+            ]
+        };
+
+        function cloneDefault() { return JSON.parse(JSON.stringify(defaultProjectData)); }
+
+        function loadProjectData() {
+            for (const key of [KEYS.data, KEYS.oldData]) {
+                try {
+                    const saved = store.get(key);
+                    if (saved) {
+                        const d = JSON.parse(saved);
+                        if (d && Array.isArray(d.progressUpdates) && Array.isArray(d.materials) && Array.isArray(d.changeOrders)) return d;
+                    }
+                } catch (e) { console.error('Gagal memuat data:', e); }
+            }
+            return cloneDefault();
+        }
+
+        function saveProjectData() {
+            if (!store.set(KEYS.data, JSON.stringify(appState))) {
+                showToast('Penyimpanan penuh (foto terlalu besar), data hanya disimpan sementara di sesi ini.', 'warning');
+            }
+        }
+
+        let appState = loadProjectData();
+        let currentUser = null;
+        let currentRole = 'contractor';
+        let currentTab = 'home';
+        let activeChangeOrderId = null;
+        let hasSigned = false;
+
+        // =====================================================
+        // 2. UTILITAS
+        // =====================================================
+        function esc(s) {
+            return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+        }
+
+        function formatRupiah(amount) {
+            const neg = amount < 0;
+            const f = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(Math.abs(amount));
+            return neg ? `- ${f}` : f;
+        }
+        function rpShort(n) {
+            const a = Math.abs(n);
+            if (a >= 1e9) return (n / 1e9).toFixed(1).replace('.0', '') + ' M';
+            if (a >= 1e6) return (n / 1e6).toFixed(1).replace('.0', '') + ' jt';
+            if (a >= 1e3) return Math.round(n / 1e3) + ' rb';
+            return String(n);
+        }
+        function parseIdDate(str) {
+            const m = /(\d{1,2})\s+([A-Za-z]{3})\s+(\d{4})(?:\D+(\d{1,2}):(\d{2}))?/.exec(str || '');
+            if (!m) return 0;
+            const mi = MONTHS.indexOf(m[2]);
+            return new Date(+m[3], mi < 0 ? 0 : mi, +m[1], +(m[4] || 0), +(m[5] || 0)).getTime();
+        }
+        function getCurrentTimestamp() {
+            const n = new Date();
+            return `${String(n.getDate()).padStart(2, '0')} ${MONTHS[n.getMonth()]} ${n.getFullYear()} • ${String(n.getHours()).padStart(2, '0')}:${String(n.getMinutes()).padStart(2, '0')} WIB`;
+        }
+        function getCurrentDateShort() {
+            const n = new Date();
+            return `${String(n.getDate()).padStart(2, '0')} ${MONTHS[n.getMonth()]} ${n.getFullYear()}`;
+        }
+
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            const colors = { success: 'bg-slate-900 text-white border-emerald-500', warning: 'bg-amber-950 text-amber-100 border-amber-500', info: 'bg-slate-900 text-white border-amber-400', danger: 'bg-rose-950 text-rose-100 border-rose-500' };
+            const icons = { success: 'fa-circle-check text-emerald-400', warning: 'fa-triangle-exclamation text-amber-400', info: 'fa-circle-info text-amber-400', danger: 'fa-circle-xmark text-rose-400' };
+            toast.className = `pointer-events-auto flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg border-l-4 text-xs sm:text-sm font-medium transition-all duration-300 ${colors[type] || colors.info}`;
+            toast.innerHTML = `<i class="fa-solid ${icons[type] || icons.info} text-base"></i><span>${esc(message)}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => { toast.style.opacity = '0'; toast.style.transform = 'translateY(8px)'; setTimeout(() => toast.remove(), 300); }, 3800);
+        }
+
+        // =====================================================
+        // 3. MODE SIANG / MALAM
+        // =====================================================
+        function isDark() { return document.documentElement.classList.contains('dark'); }
+
+        function updateThemeButtons() {
+            const dark = isDark();
+            document.querySelectorAll('.theme-icon').forEach(i => { i.className = 'theme-icon fa-solid ' + (dark ? 'fa-sun' : 'fa-moon') + (i.closest('header') ? ' text-amber-400' : ''); });
+            document.querySelectorAll('.theme-label').forEach(l => { l.textContent = dark ? 'Mode Siang' : 'Mode Malam'; });
+        }
+        function toggleTheme() {
+            const dark = !isDark();
+            document.documentElement.classList.toggle('dark', dark);
+            store.set(KEYS.theme, dark ? 'dark' : 'light');
+            updateThemeButtons();
+            renderCharts();
+        }
+
+        // =====================================================
+        // 4. AUTENTIKASI (ID & REGISTRASI)
+        // =====================================================
+        let loginFails = 0, lockUntil = 0;
+
+        function getUsers() {
+            try { const u = JSON.parse(store.get(KEYS.users) || '[]'); return Array.isArray(u) ? u : []; } catch (e) { return []; }
+        }
+        function saveUsers(u) { store.set(KEYS.users, JSON.stringify(u)); }
+
+        function cyrb53(str, seed = 0) {
+            let h1 = 0xdeadbeef ^ seed, h2 = 0x41c6ce57 ^ seed;
+            for (let i = 0, ch; i < str.length; i++) { ch = str.charCodeAt(i); h1 = Math.imul(h1 ^ ch, 2654435761); h2 = Math.imul(h2 ^ ch, 1597334677); }
+            h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+            h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+            return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString(16);
+        }
+        async function hashPassword(pw, salt) {
+            const text = salt + ':' + pw;
+            try {
+                if (window.crypto && crypto.subtle) {
+                    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+                    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+                }
+            } catch (e) {}
+            return 'f' + cyrb53(text) + cyrb53(text, 7);
+        }
+        function makeSalt() {
+            try { const a = new Uint8Array(12); crypto.getRandomValues(a); return Array.from(a).map(b => b.toString(16).padStart(2, '0')).join(''); }
+            catch (e) { return Math.random().toString(16).slice(2) + Date.now().toString(16); }
+        }
+
+        function togglePass(inputId, btn) {
+            const el = document.getElementById(inputId);
+            const show = el.type === 'password';
+            el.type = show ? 'text' : 'password';
+            btn.innerHTML = `<i class="fa-regular ${show ? 'fa-eye-slash' : 'fa-eye'}"></i>`;
+        }
+
+        function setAuthNotice(msg, tone) {
+            const box = document.getElementById('authNotice');
+            if (!msg) { box.classList.add('hidden'); return; }
+            const tones = { success: 'bg-emerald-50 text-emerald-800 border-emerald-300', info: 'bg-amber-50 text-amber-900 border-amber-300' };
+            box.className = `mb-4 text-xs rounded-xl px-3.5 py-2.5 border ${tones[tone] || tones.info}`;
+            box.textContent = msg;
+        }
+        function showFormError(id, msg) {
+            const el = document.getElementById(id);
+            if (!msg) { el.classList.add('hidden'); el.textContent = ''; return; }
+            el.textContent = msg; el.classList.remove('hidden');
+        }
+
+        function showAuthTab(tab) {
+            const isLogin = tab === 'login';
+            document.getElementById('loginForm').classList.toggle('hidden', !isLogin);
+            document.getElementById('registerForm').classList.toggle('hidden', isLogin);
+            document.getElementById('authTabLogin').className = 'seg ' + (isLogin ? 'seg-active' : 'seg-idle');
+            document.getElementById('authTabRegister').className = 'seg ' + (!isLogin ? 'seg-active' : 'seg-idle');
+            showFormError('loginError', ''); showFormError('registerError', '');
+            if (isLogin) setAuthNotice('', ''); 
+        }
+
+        function showAuth(msg, tone) {
+            document.getElementById('appRoot').classList.add('hidden');
+            document.getElementById('authScreen').classList.remove('hidden');
+            const hasUsers = getUsers().length > 0;
+            showAuthTab(hasUsers ? 'login' : 'register');
+            if (!hasUsers) setAuthNotice('Belum ada ID terdaftar. Buat ID pertama Anda untuk mulai memakai RenovARS.', 'info');
+            else if (msg) setAuthNotice(msg, tone);
+            else setAuthNotice('', '');
+        }
+
+        async function handleRegister(e) {
+            e.preventDefault();
+            showFormError('registerError', '');
+            const name = document.getElementById('regName').value.trim();
+            const id = document.getElementById('regId').value.trim().toLowerCase();
+            const role = (document.querySelector('input[name="regRole"]:checked') || {}).value || 'contractor';
+            const p1 = document.getElementById('regPass').value;
+            const p2 = document.getElementById('regPass2').value;
+
+            if (name.length < 3) return showFormError('registerError', 'Nama lengkap minimal 3 karakter.');
+            if (!/^[a-z0-9_.]{4,20}$/.test(id)) return showFormError('registerError', 'ID hanya boleh huruf kecil, angka, titik, atau garis bawah (4–20 karakter).');
+            if (p1.length < 6) return showFormError('registerError', 'Kata sandi minimal 6 karakter.');
+            if (p1 !== p2) return showFormError('registerError', 'Konfirmasi kata sandi tidak sama.');
+            const users = getUsers();
+            if (users.some(u => u.id === id)) return showFormError('registerError', 'ID tersebut sudah dipakai. Silakan pilih ID lain.');
+
+            const salt = makeSalt();
+            const hash = await hashPassword(p1, salt);
+            users.push({ id, name, role, salt, hash, createdAt: Date.now() });
+            saveUsers(users);
+
+            e.target.reset();
+            showAuthTab('login');
+            document.getElementById('loginId').value = id;
+            document.getElementById('loginPass').value = '';
+            setAuthNotice(`ID "${id}" berhasil didaftarkan. Silakan masuk dengan kata sandi Anda.`, 'success');
+            document.getElementById('loginPass').focus();
+        }
+
+        async function handleLogin(e) {
+            e.preventDefault();
+            showFormError('loginError', '');
+            if (Date.now() < lockUntil) {
+                return showFormError('loginError', `Terlalu banyak percobaan. Coba lagi dalam ${Math.ceil((lockUntil - Date.now()) / 1000)} detik.`);
+            }
+            const id = document.getElementById('loginId').value.trim().toLowerCase();
+            const pw = document.getElementById('loginPass').value;
+            const user = getUsers().find(u => u.id === id);
+            const ok = user && (await hashPassword(pw, user.salt)) === user.hash;
+            if (!ok) {
+                loginFails++;
+                if (loginFails >= 5) { lockUntil = Date.now() + 30000; loginFails = 0; return showFormError('loginError', 'Terlalu banyak percobaan gagal. Coba lagi dalam 30 detik.'); }
+                return showFormError('loginError', 'ID atau kata sandi salah. Jika belum punya ID, daftar terlebih dahulu.');
+            }
+            loginFails = 0;
+            store.set(KEYS.session, user.id);
+            document.getElementById('loginForm').reset();
+            setAuthNotice('', '');
+            enterApp(user);
+        }
+
+        function handleLogout() {
+            store.del(KEYS.session);
+            currentUser = null;
+            destroyCharts();
+            showAuth('Anda telah keluar.', 'info');
+        }
+
+        function enterApp(user) {
+            currentUser = user;
+            currentRole = user.role;
+            document.getElementById('authScreen').classList.add('hidden');
+            document.getElementById('appRoot').classList.remove('hidden');
+            renderUserChip();
+            updateRoleBanner();
+            renderAll();
+            switchTab('home');
+            window.scrollTo(0, 0);
+        }
+
+        function renderUserChip() {
+            const initials = currentUser.name.split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0].toUpperCase()).join('') || 'U';
+            document.getElementById('userAvatar').textContent = initials;
+            document.getElementById('userName').textContent = currentUser.name;
+            document.getElementById('userRoleLabel').textContent = (currentRole === 'contractor' ? 'Kontraktor / Tukang' : 'Pemilik Rumah') + ' • @' + currentUser.id;
+            document.getElementById('resetDemoBtn').classList.toggle('hidden', currentRole !== 'contractor');
+        }
+
+        function updateRoleBanner() {
+            const banner = document.getElementById('roleBanner');
+            const text = document.getElementById('roleBannerText');
+            const icon = document.getElementById('roleBannerIcon');
+            if (currentRole === 'contractor') {
+                banner.className = 'bg-amber-50 border-b border-amber-200/80 transition-colors duration-300';
+                icon.className = 'fa-solid fa-hard-hat text-amber-600 text-sm';
+                text.innerHTML = `<strong>Mode Kontraktor / Pemborong (${esc(currentUser.name)}):</strong> Anda dapat mengunggah laporan progres harian, mencatat nota pengeluaran, dan mengajukan biaya tambahan (Addendum).`;
+            } else {
+                banner.className = 'bg-emerald-50 border-b border-emerald-200/80 transition-colors duration-300';
+                icon.className = 'fa-solid fa-house-user text-emerald-600 text-sm';
+                text.innerHTML = `<strong>Mode Pemilik Rumah (${esc(currentUser.name)}):</strong> Pantau foto progres real-time, periksa bukti nota, dan berikan persetujuan tanda tangan digital untuk biaya tambahan.`;
+            }
+            const inner = document.querySelector('#roleBanner > div > div');
+            inner.classList.toggle('text-amber-900', currentRole === 'contractor');
+            inner.classList.toggle('text-emerald-900', currentRole !== 'contractor');
+        }
+
+        function updateRoleVisibility() {
+            const isContractor = currentRole === 'contractor';
+            document.getElementById('contractorProgressFormCard').classList.toggle('hidden', !isContractor);
+            document.getElementById('contractorMaterialFormCard').classList.toggle('hidden', !isContractor);
+            document.getElementById('contractorChangeOrderFormCard').classList.toggle('hidden', !isContractor);
+            document.getElementById('clientCoHint').classList.toggle('hidden', isContractor);
+        }
+
+        function resetDemoData() {
+            if (currentRole !== 'contractor') return;
+            store.del(KEYS.data);
+            store.del(KEYS.oldData);
+            appState = cloneDefault();
+            renderAll();
+            showToast('Data proyek dikembalikan ke contoh awal. Akun tidak terhapus.', 'info');
+        }
+
+        // =====================================================
+        // 5. TAB
+        // =====================================================
+        function switchTab(tabName) {
+            currentTab = tabName;
+            ['home', 'progress', 'materials', 'changeorders', 'analytics'].forEach(t => {
+                const btn = document.getElementById(`tabBtn-${t}`);
+                const content = document.getElementById(`tabContent-${t}`);
+                btn.className = 'tab-btn ' + (t === tabName ? 'tab-active' : 'tab-idle');
+                content.classList.toggle('hidden', t !== tabName);
+            });
+            if (tabName === 'home' || tabName === 'analytics') setTimeout(renderCharts, 30);
+        }
+
+        // =====================================================
+        // 6. STATISTIK
+        // =====================================================
+        function groupSum(arr, key) {
+            const m = {};
+            arr.forEach(x => { m[x[key]] = (m[x[key]] || 0) + Number(x.price); });
+            return Object.entries(m).map(([name, total]) => ({ name, total })).sort((a, b) => b.total - a.total);
+        }
+        const CAT_COLORS = { 'Semen & Pasir': '#f59e0b', 'Keramik & Cat': '#3b82f6', 'Listrik & Pipa': '#10b981', 'Kayu & Besi': '#8b5cf6', 'Upah Tukang & Borongan': '#f43f5e', 'Lain-lain': '#64748b' };
+        const catColor = n => CAT_COLORS[n] || '#94a3b8';
+
+        function getStats() {
+            const cos = appState.changeOrders, mats = appState.materials, reps = appState.progressUpdates;
+            const approved = cos.filter(c => c.status === 'approved');
+            const pending = cos.filter(c => c.status === 'pending');
+            const rejected = cos.filter(c => c.status === 'rejected');
+            const approvedExtras = approved.reduce((s, c) => s + Number(c.costImpact), 0);
+            const extraDays = approved.reduce((s, c) => s + Number(c.daysImpact || 0), 0);
+            const totalDays = appState.baseDays + extraDays;
+            const spent = mats.reduce((s, m) => s + Number(m.price), 0);
+            const contract = appState.initialBudget + approvedExtras;
+            const remaining = contract - spent;
+            const usage = contract > 0 ? spent / contract * 100 : 0;
+            const currentDay = reps.length ? Math.max(...reps.map(r => Number(r.dayNumber))) : 0;
+            const progress = appState.overallProgress;
+            const expected = Math.min(100, totalDays > 0 ? currentDay / totalDays * 100 : 0);
+            const diff = progress - expected;
+            const schedule = diff >= 5 ? 'ahead' : (diff >= -5 ? 'ontrack' : 'late');
+            const avgWorkers = reps.length ? reps.reduce((s, r) => s + Number(r.workers), 0) / reps.length : 0;
+            const biggest = mats.reduce((b, m) => (!b || Number(m.price) > Number(b.price)) ? m : b, null);
+            return {
+                approved, pending, rejected, approvedExtras, extraDays, totalDays, spent, contract, remaining, usage,
+                currentDay, progress, expected, diff, schedule, avgWorkers, biggest,
+                avgReceipt: mats.length ? spent / mats.length : 0,
+                costPerPoint: progress > 0 ? spent / progress : 0,
+                categories: groupSum(mats, 'category'),
+                stores: groupSum(mats, 'store')
+            };
+        }
+        const SCHEDULE_LABEL = { ahead: 'Lebih Cepat dari Rencana', ontrack: 'Sesuai Jadwal', late: 'Terlambat' };
+
+        // =====================================================
+        // 7. RENDER
+        // =====================================================
+        function renderOverviewStats() {
+            const s = getStats();
+            document.getElementById('headerProgressPercent').textContent = `${s.progress}%`;
+            document.getElementById('headerProgressBar').style.width = `${s.progress}%`;
+            document.getElementById('currentDayDisplay').textContent = s.currentDay;
+            document.getElementById('totalDaysDisplay').textContent = s.totalDays;
+            const eb = document.getElementById('extraDaysBadge');
+            if (s.extraDays > 0) { eb.textContent = `+${s.extraDays} hari addendum`; eb.classList.remove('hidden'); } else eb.classList.add('hidden');
+
+            document.getElementById('statInitialBudget').textContent = formatRupiah(appState.initialBudget);
+            document.getElementById('statApprovedExtras').textContent = (s.approvedExtras >= 0 ? '+ ' : '') + formatRupiah(s.approvedExtras);
+            document.getElementById('statPendingExtrasNote').textContent = s.pending.length > 0 ? `${s.pending.length} pengajuan menunggu ACC klien` : 'Semua pengajuan telah diproses';
+            document.getElementById('statMaterialSpent').textContent = formatRupiah(s.spent);
+            document.getElementById('statReceiptCount').textContent = `${appState.materials.length} nota terlampir`;
+            document.getElementById('tableTotalMaterial').textContent = formatRupiah(s.spent);
+            document.getElementById('statRemainingBudget').textContent = formatRupiah(s.remaining);
+            document.getElementById('statTotalContract').textContent = `Total Kontrak: ${formatRupiah(s.contract)}`;
+
+            document.getElementById('badge-progress').textContent = appState.progressUpdates.length;
+            document.getElementById('badge-materials').textContent = appState.materials.length;
+            document.getElementById('badge-changeorders').textContent = appState.changeOrders.length;
+        }
+
+        function renderHome() {
+            const s = getStats();
+            const first = currentUser ? currentUser.name.split(/\s+/)[0] : '';
+            document.getElementById('homeDate').textContent = new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+            document.getElementById('homeGreeting').textContent = `Halo, ${first}! Ini ringkasan proyek hari ini.`;
+
+            // Peringatan
+            const alerts = [];
+            if (s.pending.length) {
+                alerts.push(currentRole === 'client'
+                    ? { tone: 'amber', icon: 'fa-file-signature', text: `${s.pending.length} pengajuan addendum menunggu persetujuan Anda.`, tab: 'changeorders', label: 'Tinjau sekarang' }
+                    : { tone: 'amber', icon: 'fa-hourglass-half', text: `${s.pending.length} pengajuan addendum menunggu ACC pemilik rumah.`, tab: 'changeorders', label: 'Lihat status' });
+            }
+            if (s.usage >= 80) alerts.push({ tone: 'rose', icon: 'fa-triangle-exclamation', text: `Pengeluaran sudah ${s.usage.toFixed(0)}% dari total kontrak. Pantau sisa anggaran dengan cermat.`, tab: 'analytics', label: 'Lihat analitik' });
+            if (s.schedule === 'late') alerts.push({ tone: 'rose', icon: 'fa-clock', text: `Progres ${s.progress}% tertinggal dari rencana linear ${s.expected.toFixed(0)}% pada hari ke-${s.currentDay}.`, tab: 'analytics', label: 'Lihat analitik' });
+            if (!alerts.length) alerts.push({ tone: 'emerald', icon: 'fa-circle-check', text: `Proyek ${SCHEDULE_LABEL[s.schedule].toLowerCase()} dan tidak ada pengajuan yang menunggu.`, tab: null });
+            const toneCls = { amber: 'bg-amber-50 border-amber-200 text-amber-900', rose: 'bg-rose-50 border-rose-300 text-rose-900', emerald: 'bg-emerald-50 border-emerald-200 text-emerald-900' };
+            document.getElementById('homeAlerts').innerHTML = alerts.map(a => `
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 rounded-xl border px-4 py-3 text-xs sm:text-sm ${toneCls[a.tone]}">
+                    <span class="flex items-center gap-2.5"><i class="fa-solid ${a.icon}"></i>${esc(a.text)}</span>
+                    ${a.tab ? `<button onclick="switchTab('${a.tab}')" class="self-start sm:self-auto font-bold text-xs underline underline-offset-2">${a.label} <i class="fa-solid fa-arrow-right ml-0.5"></i></button>` : ''}
+                </div>`).join('');
+
+            // Aktivitas terbaru
+            const items = [];
+            appState.progressUpdates.forEach(p => items.push({ ts: parseIdDate(p.timestamp), tab: 'progress', icon: 'fa-camera-retro', tone: 'bg-amber-100 text-amber-600', title: `Laporan hari ke-${p.dayNumber}: ${p.title}`, sub: `${p.timestamp} • ${p.workers} tukang • capaian ${p.progressAfter}%` }));
+            appState.materials.forEach(m => items.push({ ts: parseIdDate(m.date), tab: 'materials', icon: 'fa-receipt', tone: 'bg-blue-100 text-blue-600', title: `Pengeluaran: ${m.item}`, sub: `${m.date} • ${m.store} • ${formatRupiah(m.price)}` }));
+            const coLabel = { pending: 'Menunggu persetujuan', approved: 'Disetujui', rejected: 'Ditolak' };
+            const coTone = { pending: 'bg-amber-100 text-amber-600', approved: 'bg-emerald-100 text-emerald-600', rejected: 'bg-rose-100 text-rose-600' };
+            appState.changeOrders.forEach(c => items.push({ ts: parseIdDate(c.createdAt), tab: 'changeorders', icon: 'fa-file-signature', tone: coTone[c.status], title: `Addendum: ${c.title}`, sub: `${c.createdAt} • ${coLabel[c.status]} • ${c.costImpact >= 0 ? '+' : ''}${formatRupiah(c.costImpact)}` }));
+            items.sort((a, b) => b.ts - a.ts);
+            document.getElementById('recentActivity').innerHTML = items.slice(0, 7).map(i => `
+                <button onclick="switchTab('${i.tab}')" class="w-full text-left flex items-start gap-3 p-2.5 rounded-xl hover:bg-slate-50 transition">
+                    <span class="w-9 h-9 shrink-0 rounded-lg flex items-center justify-center text-sm ${i.tone}"><i class="fa-solid ${i.icon}"></i></span>
+                    <span class="min-w-0">
+                        <span class="block text-xs sm:text-sm font-semibold text-slate-900 truncate">${esc(i.title)}</span>
+                        <span class="block text-[11px] text-slate-500 mt-0.5">${esc(i.sub)}</span>
+                    </span>
+                </button>`).join('') || '<p class="text-xs text-slate-500 p-2">Belum ada aktivitas.</p>';
+
+            // Aksi cepat
+            const qa = currentRole === 'contractor'
+                ? [['progress', 'fa-camera-retro', 'Buat laporan harian'], ['materials', 'fa-receipt', 'Catat pengeluaran & nota'], ['changeorders', 'fa-file-pen', 'Ajukan addendum'], ['analytics', 'fa-chart-pie', 'Buka analitik']]
+                : [['progress', 'fa-camera-retro', 'Lihat foto progres'], ['materials', 'fa-receipt', 'Periksa nota pengeluaran'], ['changeorders', 'fa-file-signature', 'Persetujuan addendum'], ['analytics', 'fa-chart-pie', 'Buka analitik']];
+            document.getElementById('quickActions').innerHTML = qa.map(([t, ic, lb]) => `
+                <button onclick="switchTab('${t}')" class="flex items-center gap-3 text-left px-3.5 py-3 rounded-xl border border-slate-200 hover:bg-slate-50 transition text-xs sm:text-sm font-semibold text-slate-800">
+                    <span class="w-8 h-8 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center"><i class="fa-solid ${ic}"></i></span>${lb}
+                    <i class="fa-solid fa-chevron-right ml-auto text-slate-400 text-xs"></i>
+                </button>`).join('') + `
+                <button onclick="downloadReportPDF()" class="flex items-center gap-3 text-left px-3.5 py-3 rounded-xl border border-slate-200 hover:bg-slate-50 transition text-xs sm:text-sm font-semibold text-slate-800">
+                    <span class="w-8 h-8 rounded-lg bg-rose-100 text-rose-600 flex items-center justify-center"><i class="fa-solid fa-file-pdf"></i></span>Unduh laporan PDF
+                    <i class="fa-solid fa-download ml-auto text-slate-400 text-xs"></i>
+                </button>`;
+        }
+
+        function statCard({ label, value, sub, icon, tone, extra = '' }) {
+            const tones = { amber: 'bg-amber-100 text-amber-600', blue: 'bg-blue-100 text-blue-600', emerald: 'bg-emerald-100 text-emerald-600', rose: 'bg-rose-100 text-rose-600', slate: 'bg-slate-100 text-slate-600' };
+            return `
+                <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-4">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs font-medium text-slate-500">${label}</span>
+                        <div class="w-8 h-8 rounded-lg ${tones[tone] || tones.slate} flex items-center justify-center text-sm"><i class="fa-solid ${icon}"></i></div>
+                    </div>
+                    <div class="font-display font-bold text-lg sm:text-xl text-slate-900">${value}</div>
+                    <p class="text-[11px] text-slate-500 mt-1">${sub}</p>
+                    ${extra}
+                </div>`;
+        }
+
+        function renderAnalytics() {
+            const s = getStats();
+            const schedTone = s.schedule === 'late' ? 'rose' : (s.schedule === 'ahead' ? 'emerald' : 'emerald');
+            const usageBar = `<div class="w-full bg-slate-200 rounded-full h-1.5 mt-2.5 overflow-hidden"><div class="h-1.5 rounded-full ${s.usage >= 80 ? 'bg-rose-500' : 'bg-amber-500'}" style="width:${Math.min(100, s.usage).toFixed(1)}%"></div></div>`;
+            const cards = [
+                { label: 'Total Pengeluaran', value: formatRupiah(s.spent), sub: `${appState.materials.length} nota / transaksi tercatat`, icon: 'fa-sack-dollar', tone: 'blue' },
+                { label: 'Penggunaan Anggaran', value: `${s.usage.toFixed(1)}%`, sub: `dari total kontrak ${formatRupiah(s.contract)}`, icon: 'fa-gauge-high', tone: s.usage >= 80 ? 'rose' : 'amber', extra: usageBar },
+                { label: 'Status Jadwal', value: SCHEDULE_LABEL[s.schedule], sub: `Hari ke-${s.currentDay}/${s.totalDays} • rencana ${s.expected.toFixed(0)}% vs realisasi ${s.progress}%`, icon: 'fa-calendar-check', tone: schedTone },
+                { label: 'Progres Fisik', value: `${s.progress}%`, sub: `${appState.progressUpdates.length} laporan harian`, icon: 'fa-bars-progress', tone: 'amber' },
+                { label: 'Rata-rata Tukang Hadir', value: `${s.avgWorkers.toFixed(1)} orang`, sub: `dihitung dari ${appState.progressUpdates.length} laporan`, icon: 'fa-users', tone: 'slate' },
+                { label: 'Rata-rata per Nota', value: formatRupiah(Math.round(s.avgReceipt)), sub: s.biggest ? `Terbesar: ${esc(s.biggest.item.length > 34 ? s.biggest.item.slice(0, 34) + '…' : s.biggest.item)} (${formatRupiah(s.biggest.price)})` : 'Belum ada nota', icon: 'fa-receipt', tone: 'blue' },
+                { label: 'Biaya per 1% Progres', value: formatRupiah(Math.round(s.costPerPoint)), sub: 'Total pengeluaran ÷ progres fisik', icon: 'fa-coins', tone: 'emerald' },
+                { label: 'Addendum', value: `${s.approved.length}/${appState.changeOrders.length} disetujui`, sub: `${s.approvedExtras >= 0 ? '+' : ''}${formatRupiah(s.approvedExtras)} • ${s.pending.length} menunggu • ${s.rejected.length} ditolak`, icon: 'fa-file-signature', tone: 'amber' }
+            ];
+            document.getElementById('analyticsStats').innerHTML = cards.map(statCard).join('');
+
+            document.getElementById('categoryBreakdown').innerHTML = s.categories.length ? s.categories.map(c => {
+                const pct = s.spent > 0 ? c.total / s.spent * 100 : 0;
+                return `
+                    <div>
+                        <div class="flex items-center justify-between text-xs mb-1">
+                            <span class="flex items-center gap-2 font-semibold text-slate-800"><span class="w-2.5 h-2.5 rounded-full" style="background:${catColor(c.name)}"></span>${esc(c.name)}</span>
+                            <span class="text-slate-600"><strong class="text-slate-900">${formatRupiah(c.total)}</strong> • ${pct.toFixed(1)}%</span>
+                        </div>
+                        <div class="w-full bg-slate-200 rounded-full h-2 overflow-hidden"><div class="h-2 rounded-full" style="width:${pct.toFixed(1)}%;background:${catColor(c.name)}"></div></div>
+                    </div>`;
+            }).join('') : '<p class="text-xs text-slate-500">Belum ada pengeluaran tercatat.</p>';
+        }
+
+        function getRenovationIllustrationSVG(type, timestamp, dayNum) {
+            const scenes = {
+                plafon: `<svg viewBox="0 0 600 320" class="w-full h-full object-cover" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="wallGrad1" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#e2e8f0"/><stop offset="100%" stop-color="#cbd5e1"/></linearGradient></defs><rect width="600" height="320" fill="url(#wallGrad1)"/><polygon points="0,0 600,0 500,95 100,95" fill="#1e293b"/><line x1="100" y1="95" x2="500" y2="95" stroke="#94a3b8" stroke-width="4"/><line x1="180" y1="0" x2="200" y2="95" stroke="#64748b" stroke-width="3"/><line x1="300" y1="0" x2="300" y2="95" stroke="#64748b" stroke-width="3"/><line x1="420" y1="0" x2="400" y2="95" stroke="#64748b" stroke-width="3"/><line x1="40" y1="45" x2="560" y2="45" stroke="#94a3b8" stroke-width="2.5"/><polygon points="300,0 600,0 500,95 300,95" fill="#f8fafc" opacity="0.92"/><path d="M 140 320 L 140 190 L 260 190 L 260 220" fill="none" stroke="#0284c7" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/><path d="M 155 320 L 155 205 L 285 205 L 285 220" fill="none" stroke="#dc2626" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/><circle cx="260" cy="220" r="7" fill="#0f172a"/><circle cx="285" cy="220" r="7" fill="#0f172a"/><line x1="440" y1="110" x2="415" y2="315" stroke="#d97706" stroke-width="6"/><line x1="490" y1="110" x2="515" y2="315" stroke="#d97706" stroke-width="6"/><line x1="435" y1="160" x2="495" y2="160" stroke="#b45309" stroke-width="4"/><line x1="428" y1="215" x2="502" y2="215" stroke="#b45309" stroke-width="4"/><line x1="422" y1="270" x2="508" y2="270" stroke="#b45309" stroke-width="4"/></svg>`,
+                dinding: `<svg viewBox="0 0 600 320" class="w-full h-full object-cover" xmlns="http://www.w3.org/2000/svg"><rect width="600" height="320" fill="#94a3b8"/><rect x="0" y="0" width="230" height="320" fill="#b45309" opacity="0.75"/><g stroke="#78350f" stroke-width="2" opacity="0.5"><line x1="0" y1="40" x2="230" y2="40"/><line x1="0" y1="80" x2="230" y2="80"/><line x1="0" y1="120" x2="230" y2="120"/><line x1="0" y1="160" x2="230" y2="160"/><line x1="0" y1="200" x2="230" y2="200"/><line x1="0" y1="240" x2="230" y2="240"/></g><rect x="210" y="0" width="390" height="320" fill="#cbd5e1"/><rect x="250" y="135" width="260" height="22" rx="4" fill="#f59e0b" stroke="#92400e" stroke-width="2"/><rect x="365" y="139" width="30" height="14" rx="3" fill="#ecfccb"/><circle cx="380" cy="146" r="4" fill="#65a30d"/><rect x="0" y="275" width="600" height="45" fill="#475569"/></svg>`,
+                meja: `<svg viewBox="0 0 600 320" class="w-full h-full object-cover" xmlns="http://www.w3.org/2000/svg"><rect width="600" height="320" fill="#e2e8f0"/><rect x="60" y="140" width="480" height="140" fill="#64748b"/><rect x="50" y="125" width="500" height="22" rx="3" fill="#334155"/><rect x="130" y="125" width="130" height="12" fill="#0f172a"/><rect x="85" y="147" width="35" height="133" fill="#475569"/><rect x="290" y="147" width="35" height="133" fill="#475569"/><rect x="480" y="147" width="35" height="133" fill="#475569"/><rect x="360" y="225" width="85" height="55" rx="6" fill="#d97706"/><text x="402" y="257" font-size="11" font-weight="bold" fill="#fff" text-anchor="middle">SEMEN 40KG</text><rect x="0" y="280" width="600" height="40" fill="#334155"/></svg>`
+            };
+            return `
+                <div class="relative w-full h-56 sm:h-64 rounded-xl overflow-hidden border border-slate-200 bg-slate-100">
+                    ${scenes[type] || scenes.plafon}
+                    <div class="absolute bottom-2.5 left-2.5 right-2.5 flex items-center justify-between bg-slate-950/80 text-white px-3 py-1.5 rounded-lg text-[11px] font-mono">
+                        <span><i class="fa-solid fa-camera text-amber-400 mr-1.5"></i>HARI KE-${dayNum} • ${esc(timestamp)}</span>
+                        <span class="text-emerald-400 font-sans font-semibold hidden sm:inline">Ilustrasi Demo</span>
+                    </div>
+                </div>`;
+        }
+
+        function renderProgressTimeline() {
+            const container = document.getElementById('progressTimelineList');
+            if (appState.progressUpdates.length === 0) {
+                container.innerHTML = `<div class="bg-white rounded-2xl p-8 text-center text-slate-500 border border-slate-200">Belum ada laporan progres harian.</div>`;
+                return;
+            }
+            container.innerHTML = appState.progressUpdates.map(item => {
+                const photoHtml = item.customPhoto
+                    ? `<div class="relative w-full h-56 sm:h-64 rounded-xl overflow-hidden border border-slate-200 bg-slate-100">
+                            <img src="${item.customPhoto}" alt="${esc(item.title)}" class="w-full h-full object-cover">
+                            <div class="absolute bottom-2.5 left-2.5 right-2.5 flex items-center justify-between bg-slate-950/80 text-white px-3 py-1.5 rounded-lg text-[11px] font-mono">
+                                <span><i class="fa-solid fa-camera text-amber-400 mr-1.5"></i>HARI KE-${item.dayNumber} • ${esc(item.timestamp)}</span>
+                                <span class="text-emerald-400 font-sans font-semibold hidden sm:inline">Foto Asli</span>
+                            </div>
+                       </div>`
+                    : getRenovationIllustrationSVG(item.photoType, item.timestamp, item.dayNumber);
+                return `
+                    <article class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5 transition hover:border-slate-300">
+                        <div class="flex flex-col lg:flex-row gap-5">
+                            <div class="lg:w-2/5 shrink-0">${photoHtml}</div>
+                            <div class="flex-1 flex flex-col justify-between space-y-3">
+                                <div>
+                                    <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+                                        <div class="flex items-center gap-2">
+                                            <span class="px-2.5 py-1 rounded-lg bg-slate-900 text-amber-400 font-display font-bold text-xs">Hari ke-${item.dayNumber}</span>
+                                            <span class="text-xs font-medium text-slate-500"><i class="fa-regular fa-clock mr-1"></i>${esc(item.timestamp)}</span>
+                                        </div>
+                                        <span class="text-xs font-bold px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200">Capaian: ${item.progressAfter}%</span>
+                                    </div>
+                                    <h4 class="font-display font-bold text-base sm:text-lg text-slate-900">${esc(item.title)}</h4>
+                                    <p class="text-xs sm:text-sm text-slate-600 mt-2 leading-relaxed">${esc(item.description)}</p>
+                                </div>
+                                <div class="pt-3 border-t border-slate-100 flex flex-wrap items-center gap-3 text-xs text-slate-600">
+                                    <span class="inline-flex items-center gap-1.5 bg-slate-100 px-3 py-1.5 rounded-lg font-medium"><i class="fa-solid fa-users text-slate-500"></i>${item.workers} Tukang Hadir</span>
+                                    <span class="inline-flex items-center gap-1.5 bg-slate-100 px-3 py-1.5 rounded-lg font-medium">${esc(item.weather)}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </article>`;
+            }).join('');
+        }
+
+        function renderMaterials() {
+            const tbody = document.getElementById('materialTableBody');
+            const mobileList = document.getElementById('materialMobileList');
+            tbody.innerHTML = appState.materials.map(m => `
+                <tr class="hover:bg-slate-50/80 transition">
+                    <td class="py-3.5 px-5 text-xs text-slate-500 whitespace-nowrap">${esc(m.date)}</td>
+                    <td class="py-3.5 px-5 font-semibold text-slate-900">${esc(m.item)}</td>
+                    <td class="py-3.5 px-5 text-xs text-slate-600">${esc(m.store)}</td>
+                    <td class="py-3.5 px-5"><span class="text-[11px] font-medium px-2.5 py-1 rounded-md bg-slate-100 text-slate-700">${esc(m.category)}</span></td>
+                    <td class="py-3.5 px-5 text-right font-display font-bold text-slate-900 whitespace-nowrap">${formatRupiah(m.price)}</td>
+                    <td class="py-3.5 px-5 text-center">
+                        <button onclick="openReceiptModal('${m.id}')" class="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg border border-blue-200 transition cursor-pointer">
+                            <i class="fa-solid fa-receipt"></i><span>Lihat Nota</span>
+                        </button>
+                    </td>
+                </tr>`).join('');
+            mobileList.innerHTML = appState.materials.map(m => `
+                <div class="p-4 space-y-2.5">
+                    <div class="flex items-start justify-between gap-2">
+                        <div>
+                            <span class="text-[11px] text-slate-400">${esc(m.date)} • ${esc(m.store)}</span>
+                            <h4 class="font-semibold text-sm text-slate-900 mt-0.5">${esc(m.item)}</h4>
+                        </div>
+                        <span class="text-[10px] font-semibold px-2 py-0.5 rounded bg-slate-100 text-slate-600 shrink-0">${esc(m.category)}</span>
+                    </div>
+                    <div class="flex items-center justify-between pt-1">
+                        <span class="font-display font-bold text-base text-slate-900">${formatRupiah(m.price)}</span>
+                        <button onclick="openReceiptModal('${m.id}')" class="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-700 bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-200"><i class="fa-solid fa-receipt"></i><span>Lihat Nota</span></button>
+                    </div>
+                </div>`).join('');
+        }
+
+        function renderChangeOrders() {
+            const container = document.getElementById('changeOrdersList');
+            if (!appState.changeOrders.length) {
+                container.innerHTML = `<div class="bg-white rounded-2xl p-8 text-center text-slate-500 border border-slate-200">Belum ada pengajuan addendum.</div>`;
+                return;
+            }
+            container.innerHTML = appState.changeOrders.map(co => {
+                let statusBadge = '', cardBorder = 'border-slate-200/80';
+                if (co.status === 'pending') {
+                    statusBadge = `<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-300"><i class="fa-solid fa-hourglass-half"></i> Menunggu Persetujuan Klien</span>`;
+                    cardBorder = 'border-amber-300 ring-2 ring-amber-500/10';
+                } else if (co.status === 'approved') {
+                    statusBadge = `<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300"><i class="fa-solid fa-circle-check"></i> Disetujui & Sah</span>`;
+                } else {
+                    statusBadge = `<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-rose-100 text-rose-800 border border-rose-300"><i class="fa-solid fa-circle-xmark"></i> Ditolak Klien</span>`;
+                }
+                const costColor = co.costImpact >= 0 ? 'text-amber-700 bg-amber-50 border-amber-200' : 'text-emerald-700 bg-emerald-50 border-emerald-200';
+                const costPrefix = co.costImpact >= 0 ? '+ ' : '';
+
+                let actionArea = '';
+                if (co.status === 'pending' && currentRole === 'client') {
+                    actionArea = `
+                        <div class="pt-4 mt-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 bg-amber-50/50 -mx-5 -mb-5 p-5">
+                            <span class="text-xs font-medium text-slate-700">Apakah Anda menyetujui perubahan & biaya tambahan ini?</span>
+                            <div class="flex items-center gap-2.5 w-full sm:w-auto">
+                                <button onclick="openRejectModal('${co.id}')" class="flex-1 sm:flex-none px-4 py-2.5 rounded-xl border border-rose-300 bg-white text-rose-700 hover:bg-rose-50 font-bold text-xs transition cursor-pointer"><i class="fa-solid fa-xmark mr-1"></i>Tolak</button>
+                                <button onclick="openApprovalModal('${co.id}')" class="flex-1 sm:flex-none px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm transition cursor-pointer"><i class="fa-solid fa-signature mr-1.5"></i>Setujui & Tanda Tangan</button>
+                            </div>
+                        </div>`;
+                } else if (co.status === 'pending') {
+                    actionArea = `<div class="pt-3 mt-3 border-t border-slate-100 flex items-center text-xs text-amber-800"><span><i class="fa-solid fa-clock mr-1.5"></i>Menunggu tanda tangan digital pemilik rumah. Pemilik rumah dapat menyetujuinya setelah masuk dengan ID miliknya.</span></div>`;
+                } else if (co.status === 'approved') {
+                    const sigPreview = co.signatureData === 'demo-signature'
+                        ? `<svg viewBox="0 0 160 50" class="h-10 w-32"><path d="M15,35 C30,10 40,42 55,25 C65,14 75,38 95,22 C110,12 125,35 145,28" fill="none" stroke="#0f172a" stroke-width="2.5" stroke-linecap="round"/></svg>`
+                        : `<img src="${co.signatureData}" alt="TTD Klien" class="h-10 w-auto object-contain">`;
+                    actionArea = `
+                        <div class="pt-3 mt-3 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-emerald-50/40 rounded-xl p-3">
+                            <div class="text-xs">
+                                <p class="font-bold text-emerald-900">Disetujui Digital${co.approvedBy ? ' oleh ' + esc(co.approvedBy) : ''} pada ${esc(co.approvedAt)}</p>
+                                ${co.clientNote ? `<p class="text-slate-600 mt-0.5 italic">"${esc(co.clientNote)}"</p>` : ''}
+                            </div>
+                            <div class="paper flex items-center gap-2 px-3 py-1 rounded-lg border border-emerald-200 self-start sm:self-auto">
+                                <span class="text-[10px] text-slate-400 uppercase font-semibold">TTD Klien:</span>${sigPreview}
+                            </div>
+                        </div>`;
+                } else {
+                    actionArea = `<div class="pt-3 mt-3 border-t border-slate-100 bg-rose-50/50 rounded-xl p-3 text-xs text-rose-900"><strong>Catatan Penolakan Klien:</strong> ${esc(co.clientNote || 'Tidak disetujui.')}</div>`;
+                }
+
+                return `
+                    <div class="bg-white rounded-2xl shadow-sm border ${cardBorder} p-5 overflow-hidden">
+                        <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                            <div class="space-y-1">
+                                <div class="flex flex-wrap items-center gap-2">${statusBadge}<span class="text-xs text-slate-400">Diajukan: ${esc(co.createdAt)}</span></div>
+                                <h4 class="font-display font-bold text-base sm:text-lg text-slate-900 pt-1">${esc(co.title)}</h4>
+                            </div>
+                            <div class="flex sm:flex-col items-start sm:items-end gap-1.5 shrink-0">
+                                <span class="font-display font-extrabold text-sm sm:text-base px-3 py-1 rounded-xl border ${costColor}">${costPrefix}${formatRupiah(co.costImpact)}</span>
+                                <span class="text-xs font-semibold text-slate-500"><i class="fa-regular fa-calendar-plus mr-1"></i>Estimasi waktu: ${co.daysImpact > 0 ? '+' + co.daysImpact + ' hari' : 'Tetap'}</span>
+                            </div>
+                        </div>
+                        <p class="text-xs sm:text-sm text-slate-600 mt-3 bg-slate-50 p-3 rounded-xl border border-slate-100"><strong class="text-slate-700">Alasan / Keterangan:</strong> ${esc(co.reason)}</p>
+                        ${actionArea}
+                    </div>`;
+            }).join('');
+        }
+
+        function renderAll() {
+            if (!currentUser) return;
+            renderOverviewStats();
+            renderHome();
+            renderProgressTimeline();
+            renderMaterials();
+            renderChangeOrders();
+            renderAnalytics();
+            updateRoleVisibility();
+            renderCharts();
+        }
+
+        // =====================================================
+        // 8. GRAFIK (Chart.js)
+        // =====================================================
+        const charts = {};
+        function destroyCharts() { Object.keys(charts).forEach(k => { charts[k].destroy(); delete charts[k]; }); }
+        function chartColors(dark) {
+            return dark
+                ? { text: '#94a3b8', grid: 'rgba(148,163,184,.14)', border: '#111a2e' }
+                : { text: '#475569', grid: 'rgba(100,116,139,.18)', border: '#ffffff' };
+        }
+        function axisOpts(c, o = {}) {
+            const val = { ticks: { color: c.text }, grid: { color: c.grid }, beginAtZero: true };
+            if (o.yFmt) val.ticks.callback = v => o.yFmt(v);
+            if (o.yMax) val.max = o.yMax;
+            const cat = { ticks: { color: c.text }, grid: { display: false } };
+            return o.horizontal ? { x: val, y: cat } : { x: cat, y: val };
+        }
+        function baseOpts(c, anim, extra = {}) {
+            return Object.assign({
+                responsive: true, maintainAspectRatio: false,
+                animation: anim ? { duration: 500 } : false,
+                plugins: { legend: { labels: { color: c.text, boxWidth: 12 } } }
+            }, extra);
+        }
+
+        function cfgProgress(c, anim) {
+            const s = getStats();
+            const pts = [...appState.progressUpdates].sort((a, b) => a.dayNumber - b.dayNumber);
+            const days = [0, ...pts.map(p => p.dayNumber)];
+            return {
+                type: 'line',
+                data: {
+                    labels: days.map(d => d === 0 ? 'Mulai' : 'Hari ' + d),
+                    datasets: [
+                        { label: 'Realisasi (%)', data: [0, ...pts.map(p => p.progressAfter)], borderColor: '#f59e0b', backgroundColor: 'rgba(245,158,11,.16)', fill: true, tension: .3, pointRadius: 4, pointBackgroundColor: '#f59e0b', borderWidth: 2.5 },
+                        { label: 'Rencana linear (%)', data: days.map(d => Math.min(100, +(d / s.totalDays * 100).toFixed(1))), borderColor: c.text, borderDash: [6, 5], pointRadius: 0, borderWidth: 1.5, fill: false }
+                    ]
+                },
+                options: baseOpts(c, anim, {
+                    plugins: { legend: { labels: { color: c.text, boxWidth: 12 } }, tooltip: { callbacks: { label: x => `${x.dataset.label}: ${x.parsed.y}%` } } },
+                    scales: axisOpts(c, { yFmt: v => v + '%', yMax: 100 })
+                })
+            };
+        }
+        function cfgCumulative(c, anim) {
+            const sorted = [...appState.materials].sort((a, b) => parseIdDate(a.date) - parseIdDate(b.date));
+            const byDate = new Map(); let cum = 0;
+            sorted.forEach(m => { cum += Number(m.price); byDate.set(m.date, cum); });
+            return {
+                type: 'line',
+                data: { labels: [...byDate.keys()], datasets: [{ label: 'Pengeluaran kumulatif', data: [...byDate.values()], borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,.16)', fill: true, tension: .25, pointRadius: 4, pointBackgroundColor: '#3b82f6', borderWidth: 2.5 }] },
+                options: baseOpts(c, anim, {
+                    plugins: { legend: { display: false }, tooltip: { callbacks: { label: x => formatRupiah(x.parsed.y) } } },
+                    scales: axisOpts(c, { yFmt: v => 'Rp ' + rpShort(v) })
+                })
+            };
+        }
+        function cfgCategory(c, anim) {
+            const cats = getStats().categories;
+            const total = cats.reduce((s, x) => s + x.total, 0);
+            return {
+                type: 'doughnut',
+                data: { labels: cats.map(x => x.name), datasets: [{ data: cats.map(x => x.total), backgroundColor: cats.map(x => catColor(x.name)), borderColor: c.border, borderWidth: 2 }] },
+                options: baseOpts(c, anim, {
+                    cutout: '62%',
+                    plugins: {
+                        legend: { position: 'bottom', labels: { color: c.text, boxWidth: 10, font: { size: 11 } } },
+                        tooltip: { callbacks: { label: x => ` ${x.label}: ${formatRupiah(x.parsed)} (${total ? (x.parsed / total * 100).toFixed(1) : 0}%)` } }
+                    }
+                })
+            };
+        }
+        function cfgStores(c, anim) {
+            const st = getStats().stores.slice(0, 6);
+            return {
+                type: 'bar',
+                data: { labels: st.map(x => x.name.length > 22 ? x.name.slice(0, 22) + '…' : x.name), datasets: [{ label: 'Total', data: st.map(x => x.total), backgroundColor: '#f59e0b', borderRadius: 6 }] },
+                options: baseOpts(c, anim, {
+                    indexAxis: 'y',
+                    plugins: { legend: { display: false }, tooltip: { callbacks: { label: x => formatRupiah(x.parsed.x) } } },
+                    scales: axisOpts(c, { yFmt: v => rpShort(v), horizontal: true })
+                })
+            };
+        }
+        function cfgWorkers(c, anim) {
+            const pts = [...appState.progressUpdates].sort((a, b) => a.dayNumber - b.dayNumber);
+            return {
+                type: 'bar',
+                data: { labels: pts.map(p => 'Hari ' + p.dayNumber), datasets: [{ label: 'Tukang hadir', data: pts.map(p => Number(p.workers)), backgroundColor: '#10b981', borderRadius: 6 }] },
+                options: baseOpts(c, anim, {
+                    plugins: { legend: { display: false }, tooltip: { callbacks: { label: x => `${x.parsed.y} orang` } } },
+                    scales: axisOpts(c, { yFmt: v => Number.isInteger(v) ? v : '' })
+                })
+            };
+        }
+
+        function renderCharts() {
+            if (typeof Chart === 'undefined' || !currentUser) return;
+            Chart.defaults.font.family = 'Inter, sans-serif';
+            const c = chartColors(isDark());
+            const defs = [
+                ['chartHomeProgress', cfgProgress], ['chartHomeCategory', cfgCategory],
+                ['chartAnProgress', cfgProgress], ['chartAnCumulative', cfgCumulative], ['chartAnCategory', cfgCategory],
+                ['chartAnStores', cfgStores], ['chartAnWorkers', cfgWorkers]
+            ];
+            defs.forEach(([id, fn]) => {
+                const el = document.getElementById(id);
+                if (!el || el.offsetParent === null) return;
+                if (charts[id]) charts[id].destroy();
+                charts[id] = new Chart(el, fn(c, true));
+            });
+        }
+
+        function chartToImage(cfg, w, h) {
+            const canvas = document.createElement('canvas');
+            canvas.width = w; canvas.height = h;
+            cfg.options = Object.assign({}, cfg.options, { responsive: false, animation: false, devicePixelRatio: 3 });
+            cfg.plugins = [{ id: 'whiteBg', beforeDraw(ch) { const x = ch.ctx; x.save(); x.globalCompositeOperation = 'destination-over'; x.fillStyle = '#ffffff'; x.fillRect(0, 0, ch.width, ch.height); x.restore(); } }];
+            const chart = new Chart(canvas, cfg);
+            const img = chart.toBase64Image('image/png', 1);
+            chart.destroy();
+            return img;
+        }
+
+        // =====================================================
+        // 9. UNDUH LAPORAN PDF
+        // =====================================================
+        function pdfSafe(s) {
+            return String(s == null ? '' : s).replace(/[•·]/g, '-').replace(/[—–]/g, '-').replace(/[“”]/g, '"').replace(/[‘’]/g, "'").replace(/…/g, '...').replace(/[^\x20-\x7E\xA0-\xFF]/g, '');
+        }
+        const pdfRp = n => (n < 0 ? '-' : '') + 'Rp ' + Math.abs(Math.round(n)).toLocaleString('id-ID');
+
+        function downloadReportPDF() {
+            if (!window.jspdf || !window.jspdf.jsPDF) { showToast('Pustaka PDF belum termuat. Periksa koneksi internet lalu coba lagi.', 'warning'); return; }
+            try {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+                if (typeof doc.autoTable !== 'function') { showToast('Plugin tabel PDF belum termuat. Muat ulang halaman.', 'warning'); return; }
+                const s = getStats();
+                const W = doc.internal.pageSize.getWidth(), H = doc.internal.pageSize.getHeight();
+                const M = 40;
+                const now = new Date();
+                const printed = now.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) + ' ' + now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }).replace('.', ':');
+
+                // Header
+                doc.setFillColor(15, 23, 42); doc.rect(0, 0, W, 74, 'F');
+                doc.setFillColor(245, 158, 11); doc.rect(0, 74, W, 3, 'F');
+                doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold'); doc.setFontSize(22); doc.text('RenovARS', M, 40);
+                doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5); doc.setTextColor(251, 191, 36);
+                doc.text('Laporan Pengeluaran & Analitik Proyek Renovasi', M, 58);
+                doc.setTextColor(203, 213, 225); doc.setFontSize(8.5);
+                doc.text('ID Proyek #RNV-2026-089', W - M, 40, { align: 'right' });
+                doc.text('Dicetak: ' + pdfSafe(printed), W - M, 56, { align: 'right' });
+
+                let y = 100;
+                doc.setTextColor(15, 23, 42); doc.setFont('helvetica', 'bold'); doc.setFontSize(12);
+                doc.text('Renovasi Dapur, Area Servis & Ruang Tamu - Bpk. Hendra', M, y); y += 15;
+                doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(71, 85, 105);
+                doc.text('Lokasi: Jl. Pandanaran No. 42, Semarang   |   Pelaksana: CV. Karya Bangun Mandiri (Mandor: Pak Budi Santoso)', M, y); y += 12;
+                doc.text('Dicetak oleh: ' + pdfSafe(currentUser.name) + ' (' + (currentRole === 'contractor' ? 'Kontraktor / Tukang' : 'Pemilik Rumah') + ')', M, y); y += 20;
+
+                const section = (title) => {
+                    if (y > H - 110) { doc.addPage(); y = 50; }
+                    doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(15, 23, 42);
+                    doc.text(title, M, y);
+                    doc.setDrawColor(245, 158, 11); doc.setLineWidth(1.5); doc.line(M, y + 4, M + 34, y + 4);
+                    y += 14;
+                };
+                const after = () => { y = doc.lastAutoTable.finalY + 20; };
+                const tableBase = { margin: { left: M, right: M }, styles: { fontSize: 8.5, cellPadding: 4, textColor: [30, 41, 59] }, headStyles: { fillColor: [15, 23, 42], textColor: 255, fontStyle: 'bold' }, alternateRowStyles: { fillColor: [248, 250, 252] }, footStyles: { fillColor: [254, 243, 199], textColor: [15, 23, 42], fontStyle: 'bold' } };
+
+                // Ringkasan keuangan
+                section('Ringkasan Keuangan & Progres');
+                doc.autoTable(Object.assign({}, tableBase, {
+                    startY: y,
+                    head: [['Keterangan', 'Nilai']],
+                    body: [
+                        ['Anggaran awal (RAB)', pdfRp(appState.initialBudget)],
+                        ['Addendum disetujui', (s.approvedExtras >= 0 ? '+ ' : '') + pdfRp(s.approvedExtras)],
+                        ['Total kontrak', pdfRp(s.contract)],
+                        ['TOTAL PENGELUARAN TERCATAT', pdfRp(s.spent)],
+                        ['Sisa anggaran', pdfRp(s.remaining)],
+                        ['Penggunaan anggaran', s.usage.toFixed(1) + '%'],
+                        ['Progres fisik', s.progress + '%'],
+                        ['Status jadwal', SCHEDULE_LABEL[s.schedule] + ' (hari ke-' + s.currentDay + ' dari ' + s.totalDays + '; rencana ' + s.expected.toFixed(0) + '% vs realisasi ' + s.progress + '%)'],
+                        ['Rata-rata tukang hadir', s.avgWorkers.toFixed(1) + ' orang per laporan'],
+                        ['Rata-rata per nota', pdfRp(s.avgReceipt)],
+                        ['Biaya per 1% progres', pdfRp(s.costPerPoint)]
+                    ],
+                    columnStyles: { 0: { cellWidth: 190, fontStyle: 'bold' }, 1: { halign: 'left' } },
+                    didParseCell: d => { if (d.section === 'body' && d.row.index === 3) { d.cell.styles.fillColor = [254, 243, 199]; d.cell.styles.fontStyle = 'bold'; } }
+                }));
+                after();
+
+                // Grafik
+                if (typeof Chart !== 'undefined') {
+                    const c = chartColors(false);
+                    const cw = (W - 2 * M - 12) / 2, ch = cw * 230 / 380;
+                    const drawPair = (title, a, b) => {
+                        if (y + ch + 40 > H - 50) { doc.addPage(); y = 50; }
+                        section(title);
+                        doc.addImage(chartToImage(a, 380, 230), 'PNG', M, y, cw, ch);
+                        doc.addImage(chartToImage(b, 380, 230), 'PNG', M + cw + 12, y, cw, ch);
+                        doc.setDrawColor(226, 232, 240); doc.setLineWidth(.5);
+                        doc.rect(M, y, cw, ch); doc.rect(M + cw + 12, y, cw, ch);
+                        y += ch + 20;
+                    };
+                    if (appState.materials.length) drawPair('Grafik Pengeluaran', cfgCategory(c, false), cfgCumulative(c, false));
+                    drawPair('Grafik Progres & Tenaga Kerja', cfgProgress(c, false), cfgWorkers(c, false));
+                }
+
+                // Per kategori
+                section('Pengeluaran per Kategori');
+                doc.autoTable(Object.assign({}, tableBase, {
+                    startY: y,
+                    head: [['Kategori', 'Nominal', '% dari Total']],
+                    body: s.categories.map(x => [pdfSafe(x.name), pdfRp(x.total), (s.spent ? x.total / s.spent * 100 : 0).toFixed(1) + '%']),
+                    foot: [['Total', pdfRp(s.spent), s.spent ? '100%' : '0%']],
+                    columnStyles: { 1: { halign: 'right' }, 2: { halign: 'right' } }
+                }));
+                after();
+
+                // Rincian nota
+                section('Rincian Pengeluaran & Nota');
+                const sortedMats = [...appState.materials].sort((a, b) => parseIdDate(a.date) - parseIdDate(b.date));
+                doc.autoTable(Object.assign({}, tableBase, {
+                    startY: y,
+                    head: [['Tanggal', 'Item', 'Toko / Supplier', 'Kategori', 'No. Nota', 'Nominal']],
+                    body: sortedMats.map(m => [pdfSafe(m.date), pdfSafe(m.item), pdfSafe(m.store), pdfSafe(m.category), pdfSafe(m.receiptNo || '-'), pdfRp(m.price)]),
+                    foot: [[{ content: 'TOTAL PENGELUARAN', colSpan: 5, styles: { halign: 'right' } }, pdfRp(s.spent)]],
+                    columnStyles: { 0: { cellWidth: 62 }, 5: { halign: 'right', cellWidth: 80 } }
+                }));
+                after();
+
+                // Addendum
+                section('Riwayat Addendum');
+                const stLabel = { pending: 'Menunggu', approved: 'Disetujui', rejected: 'Ditolak' };
+                doc.autoTable(Object.assign({}, tableBase, {
+                    startY: y,
+                    head: [['Diajukan', 'Judul', 'Biaya', 'Waktu', 'Status']],
+                    body: appState.changeOrders.map(co => [pdfSafe(co.createdAt), pdfSafe(co.title), (co.costImpact >= 0 ? '+ ' : '') + pdfRp(co.costImpact), co.daysImpact > 0 ? '+' + co.daysImpact + ' hari' : 'Tetap', stLabel[co.status]]),
+                    columnStyles: { 2: { halign: 'right' }, 4: { fontStyle: 'bold' } }
+                }));
+                after();
+
+                // Progres
+                section('Ringkasan Laporan Progres Harian');
+                doc.autoTable(Object.assign({}, tableBase, {
+                    startY: y,
+                    head: [['Hari', 'Tanggal', 'Pekerjaan', 'Tukang', 'Capaian']],
+                    body: [...appState.progressUpdates].sort((a, b) => a.dayNumber - b.dayNumber).map(p => ['Ke-' + p.dayNumber, pdfSafe(p.timestamp), pdfSafe(p.title), p.workers + ' org', p.progressAfter + '%']),
+                    columnStyles: { 3: { halign: 'center' }, 4: { halign: 'right' } }
+                }));
+
+                // Footer
+                const pages = doc.internal.getNumberOfPages();
+                for (let i = 1; i <= pages; i++) {
+                    doc.setPage(i);
+                    doc.setDrawColor(226, 232, 240); doc.setLineWidth(.5); doc.line(M, H - 34, W - M, H - 34);
+                    doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(100, 116, 139);
+                    doc.text('RenovARS - Dokumen dibuat otomatis dari data proyek', M, H - 20);
+                    doc.text('Halaman ' + i + ' dari ' + pages, W - M, H - 20, { align: 'right' });
+                }
+
+                const p2 = n => String(n).padStart(2, '0');
+                doc.save(`RenovARS_Laporan_Pengeluaran_${now.getFullYear()}-${p2(now.getMonth() + 1)}-${p2(now.getDate())}.pdf`);
+                showToast('Laporan PDF berhasil dibuat dan diunduh.', 'success');
+            } catch (err) {
+                console.error(err);
+                showToast('Gagal membuat PDF: ' + (err && err.message ? err.message : 'kesalahan tidak diketahui'), 'danger');
+            }
+        }
+
+        // =====================================================
+        // 10. FORM KONTRAKTOR
+        // =====================================================
+        function previewUploadImage(input, previewId, labelId) {
+            const file = input.files && input.files[0];
+            const previewEl = document.getElementById(previewId);
+            const labelEl = document.getElementById(labelId);
+            if (!file) return;
+            labelEl.textContent = file.name;
+            const reader = new FileReader();
+            reader.onload = e => { previewEl.src = e.target.result; previewEl.classList.remove('hidden'); };
+            reader.readAsDataURL(file);
+        }
+
+        function handleAddProgress(e) {
+            e.preventDefault();
+            if (currentRole !== 'contractor') return;
+            const title = document.getElementById('progTitle').value.trim();
+            const workers = Number(document.getElementById('progWorkers').value);
+            const weather = document.getElementById('progWeather').value;
+            const progressAfter = Number(document.getElementById('progPercent').value);
+            const description = document.getElementById('progDescription').value.trim();
+            const previewImg = document.getElementById('progPhotoPreview');
+            const customPhoto = !previewImg.classList.contains('hidden') ? previewImg.src : null;
+            const latestDay = appState.progressUpdates.length > 0 ? Math.max(...appState.progressUpdates.map(p => p.dayNumber)) + 1 : 1;
+
+            appState.progressUpdates.unshift({ id: 'prog-' + Date.now(), dayNumber: latestDay, timestamp: getCurrentTimestamp(), title, workers, weather, progressAfter, description, photoType: 'plafon', customPhoto });
+            appState.overallProgress = progressAfter;
+            saveProjectData();
+            renderAll();
+
+            e.target.reset();
+            previewImg.classList.add('hidden'); previewImg.src = '';
+            document.getElementById('progFileName').textContent = 'Pilih atau ambil foto dari perangkat...';
+            document.getElementById('progSliderLabel').textContent = progressAfter + '%';
+            document.getElementById('progPercent').value = progressAfter;
+            showToast('Laporan progres harian berhasil dikirim dengan timestamp!', 'success');
+        }
+
+        function handleAddMaterial(e) {
+            e.preventDefault();
+            if (currentRole !== 'contractor') return;
+            const item = document.getElementById('matItem').value.trim();
+            const storeName = document.getElementById('matStore').value.trim();
+            const price = Number(document.getElementById('matPrice').value);
+            const category = document.getElementById('matCategory').value;
+            const previewImg = document.getElementById('matReceiptPreview');
+            const customReceipt = !previewImg.classList.contains('hidden') ? previewImg.src : null;
+
+            appState.materials.unshift({ id: 'mat-' + Date.now(), date: getCurrentDateShort(), item, store: storeName, category, price, receiptNo: 'NOTA-' + Math.floor(10000 + Math.random() * 90000), customReceipt });
+            saveProjectData();
+            renderAll();
+
+            e.target.reset();
+            previewImg.classList.add('hidden'); previewImg.src = '';
+            document.getElementById('matFileName').textContent = 'Unggah foto nota...';
+            showToast('Pengeluaran & nota berhasil dicatat!', 'success');
+        }
+
+        function handleAddChangeOrder(e) {
+            e.preventDefault();
+            if (currentRole !== 'contractor') return;
+            appState.changeOrders.unshift({
+                id: 'co-' + Date.now(), createdAt: getCurrentTimestamp(),
+                title: document.getElementById('coTitle').value.trim(),
+                costImpact: Number(document.getElementById('coCost').value),
+                daysImpact: Number(document.getElementById('coDays').value),
+                reason: document.getElementById('coReason').value.trim(),
+                status: 'pending', clientNote: '', approvedAt: null, approvedBy: null, signatureData: null
+            });
+            saveProjectData();
+            renderAll();
+            e.target.reset();
+            showToast('Pengajuan tambahan biaya terkirim ke pemilik rumah untuk di-ACC.', 'info');
+        }
+
+        // =====================================================
+        // 11. MODAL NOTA, TTD, PENOLAKAN
+        // =====================================================
+        function openReceiptModal(matId) {
+            const mat = appState.materials.find(m => m.id === matId);
+            if (!mat) return;
+            const body = document.getElementById('receiptModalBody');
+            if (mat.customReceipt) {
+                body.innerHTML = `
+                    <div class="space-y-3">
+                        <img src="${mat.customReceipt}" alt="Foto Struk" class="w-full rounded-xl border border-slate-200">
+                        <div class="bg-slate-50 p-3 rounded-xl text-xs space-y-1">
+                            <p class="font-bold text-slate-900">${esc(mat.item)}</p>
+                            <p class="text-slate-600">${esc(mat.store)} • ${esc(mat.date)}</p>
+                            <p class="font-display font-bold text-sm text-blue-900 pt-1">Total: ${formatRupiah(mat.price)}</p>
+                        </div>
+                    </div>`;
+            } else {
+                body.innerHTML = `
+                    <div class="bg-amber-50/40 border border-slate-300 rounded-xl p-5 font-mono text-xs text-slate-800 shadow-inner space-y-3">
+                        <div class="text-center border-b border-dashed border-slate-400 pb-3">
+                            <p class="font-bold text-sm uppercase tracking-wide">${esc(mat.store)}</p>
+                            <p class="text-[11px] text-slate-500">Supplier Bahan Bangunan & Alat Teknik</p>
+                            <p class="text-[11px] text-slate-500 mt-1">No. Nota: ${esc(mat.receiptNo)}</p>
+                        </div>
+                        <div class="flex justify-between text-[11px] text-slate-600"><span>Tgl: ${esc(mat.date)}</span><span>Pembeli: CV. Karya Bangun</span></div>
+                        <div class="border-t border-b border-dashed border-slate-400 py-3 space-y-2">
+                            <div class="flex justify-between gap-2"><span class="font-semibold">${esc(mat.item)}</span><span class="font-bold shrink-0">${formatRupiah(mat.price)}</span></div>
+                            <div class="flex justify-between text-[11px] text-slate-500"><span>Kategori: ${esc(mat.category)}</span><span>LUNAS (TUNAI/TRANSFER)</span></div>
+                        </div>
+                        <div class="flex justify-between items-center text-sm font-bold pt-1"><span>TOTAL BAYAR</span><span>${formatRupiah(mat.price)}</span></div>
+                        <div class="text-center pt-3">
+                            <span class="inline-block border-2 border-emerald-600 text-emerald-700 font-sans font-extrabold text-[11px] px-3 py-1 rounded uppercase tracking-wider -rotate-2">Tercatat di RenovARS</span>
+                        </div>
+                    </div>`;
+            }
+            document.getElementById('receiptModal').classList.remove('hidden');
+        }
+
+        function openApprovalModal(coId) {
+            if (currentRole !== 'client') return;
+            activeChangeOrderId = coId;
+            const co = appState.changeOrders.find(c => c.id === coId);
+            if (!co) return;
+            document.getElementById('approvalSigner').textContent = currentUser.name;
+            document.getElementById('approvalSummaryBox').innerHTML = `
+                <p class="font-bold text-slate-900 text-sm">${esc(co.title)}</p>
+                <p class="text-slate-600">${esc(co.reason)}</p>
+                <div class="pt-1.5 flex items-center justify-between font-bold text-amber-900 border-t border-amber-200/80 mt-1.5">
+                    <span>Dampak Biaya: ${co.costImpact >= 0 ? '+ ' : ''}${formatRupiah(co.costImpact)}</span>
+                    <span>Waktu: ${co.daysImpact > 0 ? '+' + co.daysImpact + ' Hari' : 'Tetap'}</span>
+                </div>`;
+            document.getElementById('approvalNoteInput').value = '';
+            document.getElementById('approvalModal').classList.remove('hidden');
+            initSignatureCanvas();
+        }
+        function openRejectModal(coId) {
+            if (currentRole !== 'client') return;
+            activeChangeOrderId = coId;
+            document.getElementById('rejectReasonInput').value = '';
+            document.getElementById('rejectModal').classList.remove('hidden');
+        }
+        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+        let isDrawing = false, sigCtx = null;
+        function initSignatureCanvas() {
+            const canvas = document.getElementById('signatureCanvas');
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width || 420; canvas.height = rect.height || 144;
+            sigCtx = canvas.getContext('2d');
+            sigCtx.strokeStyle = '#0f172a'; sigCtx.lineWidth = 2.5; sigCtx.lineCap = 'round'; sigCtx.lineJoin = 'round';
+            hasSigned = false;
+            document.getElementById('sigPlaceholder').classList.remove('hidden');
+
+            const getCoords = e => {
+                const r = canvas.getBoundingClientRect();
+                const p = e.touches ? e.touches[0] : e;
+                return { x: p.clientX - r.left, y: p.clientY - r.top };
+            };
+            const startDraw = e => { e.preventDefault(); isDrawing = true; hasSigned = true; document.getElementById('sigPlaceholder').classList.add('hidden'); const p = getCoords(e); sigCtx.beginPath(); sigCtx.moveTo(p.x, p.y); };
+            const draw = e => { if (!isDrawing) return; e.preventDefault(); const p = getCoords(e); sigCtx.lineTo(p.x, p.y); sigCtx.stroke(); };
+            const endDraw = () => { isDrawing = false; };
+            canvas.onmousedown = startDraw; canvas.onmousemove = draw; window.onmouseup = endDraw;
+            canvas.ontouchstart = startDraw; canvas.ontouchmove = draw; canvas.ontouchend = endDraw;
+        }
+        function clearSignaturePad() {
+            const canvas = document.getElementById('signatureCanvas');
+            if (sigCtx) sigCtx.clearRect(0, 0, canvas.width, canvas.height);
+            hasSigned = false;
+            document.getElementById('sigPlaceholder').classList.remove('hidden');
+        }
+
+        function confirmChangeOrderApproval() {
+            if (!hasSigned) { showToast('Silakan goreskan tanda tangan digital Anda terlebih dahulu.', 'warning'); return; }
+            const co = appState.changeOrders.find(c => c.id === activeChangeOrderId);
+            if (!co || currentRole !== 'client') return;
+            co.status = 'approved';
+            co.approvedAt = getCurrentTimestamp();
+            co.approvedBy = currentUser.name;
+            co.clientNote = document.getElementById('approvalNoteInput').value.trim();
+            co.signatureData = document.getElementById('signatureCanvas').toDataURL('image/png');
+            saveProjectData(); renderAll(); closeModal('approvalModal');
+            showToast('Addendum berhasil disetujui & anggaran proyek diperbarui!', 'success');
+        }
+        function confirmChangeOrderReject() {
+            const co = appState.changeOrders.find(c => c.id === activeChangeOrderId);
+            if (!co || currentRole !== 'client') return;
+            co.status = 'rejected';
+            co.clientNote = document.getElementById('rejectReasonInput').value.trim() || 'Ditolak oleh pemilik rumah.';
+            saveProjectData(); renderAll(); closeModal('rejectModal');
+            showToast('Pengajuan tambahan biaya telah ditolak.', 'danger');
+        }
+
+        // =====================================================
+        // 12. MULAI
+        // =====================================================
+        window.addEventListener('DOMContentLoaded', () => {
+            updateThemeButtons();
+            const sid = store.get(KEYS.session);
+            const user = sid ? getUsers().find(u => u.id === sid) : null;
+            if (user) enterApp(user); else showAuth();
+        });
+    </script>
+</body>
+</html>
